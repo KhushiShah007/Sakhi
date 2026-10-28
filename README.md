@@ -12,7 +12,7 @@ Team Slaughter · HABIT Innovate Bootcamp.
 > WhatsApp integration. Every "voice" transcript, symptom detection, reflection and chat message is scripted
 > mock data with timers. Sunita (48, Pune), Rajesh, Anaya, Meena Tai and "Navrang Textiles" are fictional.
 
-**Live:** `https://<your-github-username>.github.io/sakhi-prototype/` (see *Deploy* below)
+**Live:** https://khushishah007.github.io/Sakhi/ (see *Deploy* below)
 
 ![Hero](screenshots/hero-en.png)
 

@@ -8,3 +8,6 @@ playwright-report
 design-reference/
 screenshots/.video-tmp/
 *.tsbuildinfo
+
+# Pitch deck (kept local)
+*.pptx
