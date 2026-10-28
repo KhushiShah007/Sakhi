@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --peach: #FEA38E;
+  --peach-light: #FFDFC3;
+  --blush: #FBA2AB;
+  --ivory: #FBEBDD;
+  --terracotta: #F3B5A0;
+  --rose: #D6336C;
+  --rose-pressed: #B02458;
+  --peri: #6C7BD9;
+  --peri-deep: #5361C8;
+  --lavender: #E6D6F5;
+  --lilac: #F3E8FB;
+  --ink: #3B1F2B;
+  --ink-soft: #6B4A57;
+  --wash: linear-gradient(180deg, #FFE3CC 0%, #FDD5CF 30%, #F9D4E2 62%, #F1E2F8 100%);
+  --wash-lilac: linear-gradient(180deg, #F6E3F7 0%, #F9D9E6 45%, #FCE3D6 100%);
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: Poppins, 'Noto Sans Devanagari', 'Noto Sans Gujarati', system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  background: #F7E1DA;
+}
+:lang(hi), :lang(mr) { font-family: Poppins, 'Noto Sans Devanagari', system-ui, sans-serif; }
+:lang(gu) { font-family: Poppins, 'Noto Sans Gujarati', system-ui, sans-serif; }
+
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--peri-deep); outline-offset: 2px; }
+
+@layer components {
+  .wash { background: var(--wash); }
+  .wash-lilac { background: var(--wash-lilac); }
+  .glass {
+    background: rgba(255, 255, 255, 0.74);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 28px -14px rgba(140, 50, 70, 0.28);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 10px 30px -14px rgba(140, 50, 70, 0.3);
+  }
+  .btn-primary {
+    @apply inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-rose px-6 text-base font-semibold text-white shadow-soft transition active:scale-[0.98] active:bg-rose-pressed;
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/80 bg-white/70 px-5 text-base font-medium text-ink backdrop-blur transition active:scale-[0.98];
+  }
+  .icon-btn {
+    @apply grid h-12 w-12 place-items-center rounded-full bg-white/75 text-ink shadow-card backdrop-blur transition active:scale-95;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-sm font-medium text-ink;
+  }
+  .h-section { @apply text-lg font-semibold text-ink; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
+
+/* soft wave pattern for deep-rose hero panels */
+.waves {
+  background-color: var(--rose);
+  background-image:
+    radial-gradient(120% 60% at 110% 0%, rgba(255,255,255,0.16) 0 30%, transparent 31%),
+    radial-gradient(90% 50% at -10% 30%, rgba(255,255,255,0.10) 0 35%, transparent 36%),
+    radial-gradient(140% 70% at 50% 120%, rgba(176,36,88,0.65) 0 40%, transparent 41%);
+}
+
+@keyframes wavebar { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+.wavebar { transform-origin: center; animation: wavebar 1s ease-in-out infinite; }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin-slow 9s linear infinite; }
+
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.floaty { animation: floaty 4s ease-in-out infinite; }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.shimmer-text {
+  background: linear-gradient(90deg, #3B1F2B 0%, #3B1F2B 40%, #B02458 50%, #3B1F2B 60%, #3B1F2B 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 3s linear infinite;
+}
