@@ -14,8 +14,10 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Runs only after Pages is enabled (Settings > Pages > Source: GitHub Actions) and a repo variable PAGES_ENABLED=true is set.
 jobs:
   build:
+    if: ${{ vars.PAGES_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
