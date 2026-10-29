@@ -156,12 +156,12 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
 
   // ---------- profile ----------
   app.get('/api/me', guarded, async (req) => {
-    const u = (await db.query('SELECT id, lang, stage, city, discreet, created_at FROM users WHERE id=$1', [req.auth!.userId]))[0];
-    return { ...u, demoMode: env.DEMO_MODE === 'true' };
+    const u = (await db.query('SELECT id, name, lang, stage, city, discreet, onboarded, created_at FROM users WHERE id=$1', [req.auth!.userId]))[0];
+    return { ...u, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
   });
 
   app.patch('/api/me', guarded, async (req, reply) => {
-    const b = z.object({ lang: langSchema, stage: z.enum(['perimenopause', 'menopause', 'surgical_early', 'no_family']), city: z.string().trim().min(1).max(60), discreet: z.boolean() }).partial().strict().safeParse(req.body);
+    const b = z.object({ name: z.string().trim().min(1).max(40), onboarded: z.boolean(), lang: langSchema, stage: z.enum(['perimenopause', 'menopause', 'surgical_early', 'no_family']), city: z.string().trim().min(1).max(60), discreet: z.boolean() }).partial().strict().safeParse(req.body);
     if (!b.success) return bad(reply, b.error);
     for (const [k, v] of Object.entries(b.data)) await db.query(`UPDATE users SET ${k}=$1 WHERE id=$2`, [v, req.auth!.userId]); // keys are whitelisted by the schema
     await audit(req.auth!.userId, 'user', 'update', 'profile');

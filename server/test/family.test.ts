@@ -216,3 +216,16 @@ describe('deletion removes the household too', () => {
     expect(await db.query('SELECT 1 FROM signals WHERE person_id=$1', [p.id])).toHaveLength(0);
   });
 });
+
+describe('family links use the address the app is served on', () => {
+  it('without PUBLIC_URL, the link follows the request host', async () => {
+    const env2 = { ...env, PUBLIC_URL: '' } as NodeJS.ProcessEnv;
+    const a2 = await buildApp({ db, llm: null, env: env2, now: () => clock, messenger: fakeWa });
+    await a2.inject({ method: 'POST', url: '/api/auth/otp/request', payload: { phone: '+919100000070' } });
+    const v = await a2.inject({ method: 'POST', url: '/api/auth/otp/verify', payload: { phone: '+919100000070', code: '123456', birthYear: 1978 } });
+    const h = { cookie: String(v.headers['set-cookie']).split(';')[0], 'x-csrf-token': v.json().csrf, host: 'sakhi.example.org', 'x-forwarded-proto': 'https' };
+    await a2.inject({ method: 'POST', url: '/api/consents', headers: h, payload: { purpose: 'family_signals', granted: true } });
+    const p = await a2.inject({ method: 'POST', url: '/api/people', headers: h, payload: { name: 'R', herLabel: 'S', role: 'husband', lang: 'en' } });
+    expect(p.json().link).toMatch(/^https:\/\/sakhi\.example\.org\/#\/f\//);
+  });
+});

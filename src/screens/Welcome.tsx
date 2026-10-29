@@ -5,6 +5,7 @@ import { LANGS, useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Screen, Waveform } from '../components/ui'
 import { useGo, useParam } from '../components/nav'
+import { useSession } from '../api/session'
 import { SKIN, Woman } from '../illustrations/Woman'
 
 const SLIDES: { a: StrKey; b: StrKey; skin: string; kurta: string; dupatta: string; arch: string; extra: 'none' | 'voice' | 'signal'; pose: 'chai' | 'calm' }[] = [
@@ -46,10 +47,11 @@ function SwipePill({ label, onDone }: { label: string; onDone: () => void }) {
 export default function Welcome() {
   const { t, lang, setLang } = useI18n()
   const go = useGo()
+  const { status } = useSession()
   const q = useParam('slide')
   const [i, setI] = useState(q ? +q : 0)
   const s = SLIDES[i]
-  const next = () => (i < SLIDES.length - 1 ? setI(i + 1) : go('/onboarding'))
+  const next = () => (i < SLIDES.length - 1 ? setI(i + 1) : go(status === 'authed' ? '/home' : status === 'offline' ? '/onboarding' : '/login'))
 
   return (
     <Screen bg="wash" className="flex flex-col">

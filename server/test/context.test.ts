@@ -81,3 +81,12 @@ describe('request bodies', () => {
     expect((await app.inject({ method: 'DELETE', url: '/api/me', headers })).statusCode).toBe(200);
   });
 });
+
+describe('profile', () => {
+  it('stores name and onboarded flag', async () => {
+    const s = await login('+919200000030');
+    expect((await call(s, 'GET', '/api/me')).json()).toMatchObject({ name: null, onboarded: false });
+    await app.inject({ method: 'PATCH', url: '/api/me', payload: { name: 'Sunita', onboarded: true, stage: 'perimenopause', city: 'Pune' }, headers: { cookie: s.cookie, 'x-csrf-token': s.csrf } });
+    expect((await call(s, 'GET', '/api/me')).json()).toMatchObject({ name: 'Sunita', onboarded: true, stage: 'perimenopause', city: 'Pune' });
+  });
+});

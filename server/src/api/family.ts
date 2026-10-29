@@ -56,9 +56,14 @@ interface PersonRow { id: string; user_id: string; her_label: string; lang: Lang
 
 export function registerFamily(app: FastifyInstance, c: Ctx) {
   const { db, key, now } = c;
-  const baseUrl = c.env.PUBLIC_URL || 'http://localhost:5173';
+  /** PUBLIC_URL wins; otherwise the address this request arrived on (so links work wherever the app is served). */
+  const baseFor = (req: FastifyRequest) => {
+    if (c.env.PUBLIC_URL) return c.env.PUBLIC_URL.replace(/\/$/, '');
+    const proto = String(req.headers['x-forwarded-proto'] ?? req.protocol).split(',')[0];
+    return `${proto}://${req.headers.host}`;
+  };
   const newToken = () => randomBytes(24).toString('base64url');
-  const linkFor = (t: string) => `${baseUrl}/#/f/${t}`;
+  const linkFor = (req: FastifyRequest, t: string) => `${baseFor(req)}/#/f/${t}`;
   const iso = () => now().toISOString();
   const day = (offset = 0) => new Date(now().getTime() + offset * 86400_000).toISOString().slice(0, 10);
 
@@ -96,7 +101,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
     await db.query('INSERT INTO people(id, user_id, name_enc, her_label, role, lang, phone_enc, link_token_hash, content_only) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
       [id, userId, encrypt(b.data.name, key, `person:${id}:name`), b.data.herLabel, b.data.role, b.data.lang, !contentOnly && b.data.phone ? encrypt(b.data.phone, key, `person:${id}:phone`) : null, sha(token), contentOnly]);
     await c.audit(userId, 'user', 'person_added', b.data.role);
-    return reply.code(201).send({ id, link: linkFor(token), contentOnly });
+    return reply.code(201).send({ id, link: linkFor(req, token), contentOnly });
   });
 
   app.get('/api/people', c.guarded, async (req) => {
@@ -127,7 +132,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
     if (!p) return reply.code(404).send({ error: 'not_found' });
     const t = newToken();
     await db.query('UPDATE people SET link_token_hash=$1 WHERE id=$2', [sha(t), p.id]);
-    return { link: linkFor(t) };
+    return { link: linkFor(req, t) };
   });
 
   app.get('/api/people/:id/preview', c.guarded, async (req, reply) => {
@@ -148,7 +153,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
       const signalId = randomUUID();
       // the link token is not recoverable (hashed), so WhatsApp points at the stable page; the person keeps their original link.
       const result = p.phone_enc
-        ? await c.messenger.sendCard({ phone: decrypt(p.phone_enc, key, `person:${p.id}:phone`), lang: p.lang, text: CARD_TEXT[b.data.cardType][p.lang], signalId, link: baseUrl })
+        ? await c.messenger.sendCard({ phone: decrypt(p.phone_enc, key, `person:${p.id}:phone`), lang: p.lang, text: CARD_TEXT[b.data.cardType][p.lang], signalId, link: baseFor(req) })
         : { status: 'link_only' as const, messageId: undefined };
       await db.query('INSERT INTO signals(id, user_id, person_id, card_type, sent_at, delivery_status, wa_message_id) VALUES ($1,$2,$3,$4,$5,$6,$7)', [signalId, userId, p.id, b.data.cardType, iso(), result.status, result.messageId ?? null]);
       sent.push({ personId: p.id, signalId, status: result.status });

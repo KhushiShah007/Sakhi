@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useGo } from './nav'
 import { BatteryFull, ChevronLeft, Signal, Sparkles, Wifi } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { useSession } from '../api/session'
 
 // ------------------------------------------------------------------ shot mode
 // Screenshots/recordings pass ?shot=1 so the fake status bar shows even at phone width.
@@ -74,6 +75,9 @@ export function StatusBar({ tone = 'dark', time = '9:41' }: { tone?: 'dark' | 'l
 
 export function ProtoStrip({ tone = 'dark' }: { tone?: 'dark' | 'light' | 'night' }) {
   const { t } = useI18n()
+  const { status, me } = useSession()
+  // Real app (logged in): no "prototype" strip. A small DEMO badge appears only when the server runs with DEMO_MODE=true.
+  if (status === 'authed') return me?.demoMode ? <div className="pointer-events-none flex justify-center"><span className="rounded-full bg-[#FFF3C4] px-2.5 py-[2px] text-[10.5px] font-semibold tracking-wide text-[#54656F]">DEMO</span></div> : null
   const cls =
     tone === 'light'
       ? 'bg-white/20 text-white'
