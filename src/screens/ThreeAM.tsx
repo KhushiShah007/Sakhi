@@ -3,9 +3,18 @@ import { motion } from 'framer-motion'
 import { BellOff, Mic, Moon, Snowflake, X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { Orb, Screen, useToast } from '../components/ui'
-import { useGo } from '../components/nav'
+import { useEmbedded, useGo } from '../components/nav'
+import { useLive } from '../api/session'
+import ThreeAMLive from './ThreeAMLive'
 
+/** Live when logged in; demo/screenshots/static hosting keep the scripted screen. */
 export default function ThreeAM() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <ThreeAMLive /> : <ThreeAMMock />
+}
+
+function ThreeAMMock() {
   const { t } = useI18n()
   const go = useGo()
   const toast = useToast()

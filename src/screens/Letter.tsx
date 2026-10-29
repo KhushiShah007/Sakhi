@@ -4,8 +4,18 @@ import { useI18n } from '../i18n'
 import { Screen, TopBar, useToast } from '../components/ui'
 import { Lotus } from '../illustrations/art'
 import { letter } from '../mock/content'
+import { useLive } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import LetterLive from './LetterLive'
 
+/** Live when logged in; demo/screenshots/static hosting keep the scripted letter. */
 export default function Letter() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <LetterLive /> : <LetterMock />
+}
+
+function LetterMock() {
   const { t, lang } = useI18n()
   const toast = useToast()
   const L = letter[lang]
