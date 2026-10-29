@@ -4,7 +4,9 @@ import { Check, Heart, Pencil, Snowflake, Sparkles } from 'lucide-react'
 import { LANGS, useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Orb, Screen, TopBar, Waveform } from '../components/ui'
-import { useGo, useParam } from '../components/nav'
+import { useEmbedded, useGo, useParam } from '../components/nav'
+import { useLive } from '../api/session'
+import VentLive from './VentLive'
 import { detected, transcript, type Detected } from '../mock/vent'
 
 export type VentStage = 'idle' | 'listening' | 'heard' | 'confirm' | 'reflect'
@@ -39,7 +41,15 @@ function SymptomChip({ d }: { d: Detected }) {
   )
 }
 
-export default function Vent({ stage: stageProp }: { stage?: VentStage }) {
+/** Live when logged in (real voice, rules, confirm-to-save). Demo, screenshots and static hosting keep the scripted version. */
+export default function Vent(props: { stage?: VentStage }) {
+  const live = useLive()
+  const embedded = useEmbedded()
+  const forced = useParam('stage')
+  return live && !embedded && !props.stage && !forced ? <VentLive /> : <VentMock {...props} />
+}
+
+function VentMock({ stage: stageProp }: { stage?: VentStage }) {
   const { t, lang } = useI18n()
   const go = useGo()
   const qStage = useParam('stage') as VentStage | null

@@ -201,6 +201,21 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     return { ...result, setId };
   });
 
+  /**
+   * Live chips while she speaks or types. Rules only (no LLM), nothing stored, nothing audited.
+   * Red flags still run first, so a crisis phrase is caught the moment it is said.
+   */
+  app.post('/api/utterance/preview', guarded, async (req, reply) => {
+    const b = z.object({ text: z.string().min(1).max(2000), lang: langSchema.optional() }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    if (limited(`prev:${req.auth!.userId}`, 240, 60_000)) return reply.code(429).send({ error: 'rate_limited' });
+    const lang = b.data.lang ?? ((await db.query<{ lang: Lang }>('SELECT lang FROM users WHERE id=$1', [req.auth!.userId]))[0].lang);
+    const r = await handleUtterance(b.data.text, lang, null, env);
+    if (r.kind === 'crisis') return r;
+    if (r.kind === 'refusal') return { kind: 'refusal', message: r.message };
+    return { kind: 'reply', symptoms: r.proposals.map((p) => ({ symptom: p.symptom, severity: p.severity, mrsItem: p.mrsItem, time: p.time, trigger: p.trigger })) };
+  });
+
   app.post('/api/logs/confirm', guarded, async (req, reply) => {
     const b = z.object({ setId: z.string().uuid(), decisions: z.array(z.object({ id: z.string(), accept: z.boolean(), severity: z.number().int().min(0).max(4).optional(), time: z.enum(TIMES).optional(), trigger: z.enum(TRIGGERS).optional() }).strict()).max(20) }).strict().safeParse(req.body);
     if (!b.success) return bad(reply, b.error);

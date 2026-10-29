@@ -90,3 +90,21 @@ describe('profile', () => {
     expect((await call(s, 'GET', '/api/me')).json()).toMatchObject({ name: 'Sunita', onboarded: true, stage: 'perimenopause', city: 'Pune' });
   });
 });
+
+describe('live preview', () => {
+  it('returns symptoms without storing or auditing anything', async () => {
+    const s = await login('+919200000040');
+    const before = (await db.query('SELECT 1 FROM audit_log')).length;
+    const setsBefore = (await db.query('SELECT 1 FROM proposal_sets')).length;
+    const r = (await call(s, 'POST', '/api/utterance/preview', { text: 'hot flashes and so tired', lang: 'en' })).json();
+    expect(r.kind).toBe('reply');
+    expect(r.symptoms.map((x: { symptom: string }) => x.symptom)).toEqual(expect.arrayContaining(['hot_flash', 'fatigue']));
+    expect((await db.query('SELECT 1 FROM audit_log')).length).toBe(before);
+    expect((await db.query('SELECT 1 FROM proposal_sets')).length).toBe(setsBefore);
+  });
+  it('catches a crisis phrase immediately, even mid-sentence', async () => {
+    const s = await login('+919200000041');
+    const r = (await call(s, 'POST', '/api/utterance/preview', { text: 'I am so tired and I want to die', lang: 'en' })).json();
+    expect(r.kind).toBe('crisis'); expect(r.llmUsed).toBe(false);
+  });
+});

@@ -19,6 +19,7 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] Live family link page (`src/family/FamilyLink.tsx`, route `#/f/:token`): WhatsApp-style, 4 languages, quick replies, estimate-labelled alert, lessons with pending-review tag, teen content-only, inactive-link state; verified in a real browser (`node scripts/e2e-family.mjs`)
 - [x] API serves the built web app (same origin, no CORS); dev proxy in vite config
 - [x] Web app wired to API (section 1): session context + API client, offline/anon/authed modes (static hosting keeps the demo), login with OTP + birth-year gate, per-purpose consent screen, live onboarding (language, name, stage, city, people + family links, voice answers with typed fallback), route guards, prototype strip removed when live (DEMO badge only if DEMO_MODE=true); verified by `node scripts/e2e-onboarding.mjs`
+- [x] Live Vent Mode (section 2): voice (browser STT) or typed, live symptom chips from a rules-only preview endpoint, crisis interrupts mid-sentence with helplines and stores nothing, refusals, tap-to-correct severity/trigger, save only what she confirms, reflection read aloud; `node scripts/e2e-vent.mjs`
 - [x] `.env.example`
 - [x] CI: typecheck, tests, safety suite, prototype build
 
