@@ -18,6 +18,8 @@ import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
 import { MAX_PIN_FAILS, PIN_LOCK_MS, PIN_RE, checkPin, hashPin } from '../privacy/pin.js';
 import { registerCheckins, registerHome, registerMoments } from './home.js';
 import { registerBrief } from './brief.js';
+import { registerLetters } from './letters.js';
+import { registerNight } from './night.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
@@ -412,6 +414,8 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerMoments(app, ctx);
   registerCheckins(app, ctx);
   registerBrief(app, ctx);
+  registerLetters(app, ctx);
+  registerNight(app, ctx);
 
   return app;
 }
