@@ -32,8 +32,17 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 }); // never log request bodies: they hold her words
   const phoneHash = (p: string) => createHmac('sha256', key).update(p).digest('hex');
 
-  /** In-memory proposal sets, per user, short-lived. Nothing here is a log entry until she confirms. */
-  const pending = new Map<string, { userId: string; proposals: ProposedEntry[]; expires: number }>();
+  /** Unconfirmed proposals are stored encrypted (AES-GCM, bound to owner + id), single use, 15 min TTL. Not a log entry until she confirms. */
+  const PROPOSAL_TTL_MS = 15 * 60_000;
+  const saveProposals = async (id: string, userId: string, proposals: ProposedEntry[]) => {
+    await db.query('DELETE FROM proposal_sets WHERE expires_at < $1', [now().toISOString()]);
+    await db.query('INSERT INTO proposal_sets(id, user_id, data_enc, expires_at) VALUES ($1,$2,$3,$4)',
+      [id, userId, encrypt(JSON.stringify(proposals), key, `proposals:${userId}:${id}`), new Date(now().getTime() + PROPOSAL_TTL_MS).toISOString()]);
+  };
+  const takeProposals = async (id: string, userId: string): Promise<ProposedEntry[] | null> => {
+    const r = (await db.query<{ data_enc: string }>('DELETE FROM proposal_sets WHERE id=$1 AND user_id=$2 AND expires_at > $3 RETURNING data_enc', [id, userId, now().toISOString()]))[0];
+    return r ? (JSON.parse(decrypt(r.data_enc, key, `proposals:${userId}:${id}`)) as ProposedEntry[]) : null;
+  };
   const hits = new Map<string, { n: number; reset: number }>();
   const limited = (k: string, max: number, windowMs: number) => {
     const t = now().getTime();
@@ -179,7 +188,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     if (result.kind === 'refusal') { await audit(userId, 'system', 'utterance_refused', result.violation); return result; }
     if (!(await hasConsent(userId, 'core_logging'))) return reply.code(403).send({ error: 'consent_required', purpose: 'core_logging' });
     const setId = randomUUID();
-    pending.set(setId, { userId, proposals: result.proposals, expires: now().getTime() + 15 * 60_000 });
+    await saveProposals(setId, userId, result.proposals);
     await audit(userId, 'system', 'utterance_processed', 'proposals'); // metadata only, never the text
     return { ...result, setId };
   });
@@ -188,12 +197,11 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     const b = z.object({ setId: z.string().uuid(), decisions: z.array(z.object({ id: z.string(), accept: z.boolean(), severity: z.number().int().min(0).max(4).optional() }).strict()).max(20) }).strict().safeParse(req.body);
     if (!b.success) return bad(reply, b.error);
     const userId = req.auth!.userId;
-    const set = pending.get(b.data.setId);
-    if (!set || set.userId !== userId || set.expires < now().getTime()) return reply.code(404).send({ error: 'proposal_set_not_found' });
     if (!(await hasConsent(userId, 'core_logging'))) return reply.code(403).send({ error: 'consent_required', purpose: 'core_logging' });
-    const logs = confirmEntries(set.proposals, b.data.decisions, now());
+    const proposals = await takeProposals(b.data.setId, userId); // atomic delete-returning: single use
+    if (!proposals) return reply.code(404).send({ error: 'proposal_set_not_found' });
+    const logs = confirmEntries(proposals, b.data.decisions, now());
     for (const l of logs) await db.query('INSERT INTO logs(id, user_id, symptom, severity, at) VALUES ($1,$2,$3,$4,$5)', [randomUUID(), userId, l.symptom, l.severity, l.at]);
-    pending.delete(b.data.setId);
     await audit(userId, 'user', 'confirm_logs', `count:${logs.length}`);
     return { saved: logs.length };
   });
@@ -239,7 +247,6 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     const tomb = `deleted:${sha(userId).slice(0, 16)}`;
     await db.query('UPDATE audit_log SET user_id=$1 WHERE user_id=$2', [tomb, userId]); // trail survives, identity does not
     await db.query('DELETE FROM users WHERE id=$1', [userId]); // cascades logs, consents, sessions
-    for (const [k, v] of pending) if (v.userId === userId) pending.delete(k);
     await audit(tomb, 'user', 'account_deleted', 'user');
     setCookie(reply, '', 0);
     return { deleted: true };

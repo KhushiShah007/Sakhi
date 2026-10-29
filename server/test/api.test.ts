@@ -94,6 +94,21 @@ describe('talk -> propose -> confirm -> log -> brief', () => {
     const dump = JSON.stringify([await db.query('SELECT * FROM logs'), await db.query('SELECT * FROM audit_log')]);
     expect(dump).not.toContain('very tired'); expect(dump).not.toContain('hot flashes at night');
   });
+  it('pending proposals persist encrypted across an app restart, expire after 15 min, and hold no words', async () => {
+    const s = await login('+919000000015');
+    await call(s, 'POST', '/api/consents', { purpose: 'core_logging', granted: true });
+    const u = (await call(s, 'POST', '/api/utterance', { text: 'thak gayi hoon, bahut chidchid', lang: 'hi' })).json();
+    const row = (await db.query<{ data_enc: string }>('SELECT data_enc FROM proposal_sets WHERE id=$1', [u.setId]))[0];
+    expect(row.data_enc).not.toContain('fatigue'); expect(row.data_enc).not.toContain('thak');
+    const app2 = await buildApp({ db, llm: null, env, now: () => clock }); // fresh instance, same DB
+    const r = await app2.inject({ method: 'POST', url: '/api/logs/confirm', payload: { setId: u.setId, decisions: [{ id: 'p0', accept: true }] }, headers: { cookie: s.cookie, 'x-csrf-token': s.csrf } });
+    expect(r.json().saved).toBe(1);
+    const u2 = (await call(s, 'POST', '/api/utterance', { text: 'thak gayi hoon', lang: 'hi' })).json();
+    const saved = clock; clock = new Date(clock.getTime() + 16 * 60_000);
+    const late = await app2.inject({ method: 'POST', url: '/api/logs/confirm', payload: { setId: u2.setId, decisions: [{ id: 'p0', accept: true }] }, headers: { cookie: s.cookie, 'x-csrf-token': s.csrf } });
+    clock = saved;
+    expect(late.statusCode).toBe(404);
+  });
   it('another user cannot confirm her proposal set', async () => {
     const a = await login('+919000000011'); const b = await login('+919000000012');
     for (const s of [a, b]) await call(s, 'POST', '/api/consents', { purpose: 'core_logging', granted: true });
