@@ -612,6 +612,12 @@ export const S = {
   mc_ended: { en: 'Call ended. Nothing was saved.', hi: 'कॉल समाप्त। कुछ भी सहेजा नहीं गया।', mr: 'कॉल संपला. काहीही साठवले नाही.', gu: 'કૉલ પૂરો. કંઈ સાચવ્યું નથી.' },
   mc_hang: { en: 'Hang up', hi: 'कॉल काटें', mr: 'कॉल कट करा', gu: 'કૉલ કાપો' },
   mc_note: { en: 'Nothing is saved on a call. Open the app to confirm and save anything.', hi: 'कॉल पर कुछ भी सहेजा नहीं जाता। कुछ सहेजना हो तो ऐप खोलकर पक्का करें।', mr: 'कॉलवर काहीही साठवले जात नाही. काही साठवायचे असल्यास ॲप उघडून पक्के करा.', gu: 'કૉલ પર કંઈ સચવાતું નથી. કંઈ સાચવવું હોય તો ઍપ ખોલીને પાક્કું કરો.' },
+
+  // ---- microphone help (shown when the browser cannot listen; typing always works)
+  mic_denied: { en: 'The microphone is blocked. Allow it in the browser address bar, or just type below.', hi: 'माइक्रोफ़ोन बंद है। ब्राउज़र के एड्रेस बार में अनुमति दें, या नीचे लिख दें।', mr: 'मायक्रोफोन बंद आहे. ब्राउझरच्या अ‍ॅड्रेस बारमध्ये परवानगी द्या, किंवा खाली लिहा.', gu: 'માઇક્રોફોન બંધ છે. બ્રાઉઝરના એડ્રેસ બારમાં પરવાનગી આપો, અથવા નીચે લખો.' },
+  mic_none: { en: 'I did not hear anything. Tap the circle and try again, or type below.', hi: 'कुछ सुनाई नहीं दिया। गोले को दबाकर फिर कोशिश करें, या नीचे लिखें।', mr: 'काही ऐकू आले नाही. वर्तुळ दाबून पुन्हा प्रयत्न करा, किंवा खाली लिहा.', gu: 'કંઈ સંભળાયું નહીં. વર્તુળ દબાવીને ફરી પ્રયત્ન કરો, અથવા નીચે લખો.' },
+  mic_net: { en: 'The speech service could not be reached. Please type below.', hi: 'बोली पहचानने की सेवा नहीं मिली। कृपया नीचे लिखें।', mr: 'बोलणे ओळखणारी सेवा मिळाली नाही. कृपया खाली लिहा.', gu: 'બોલી ઓળખતી સેવા મળી નહીં. કૃપા કરીને નીચે લખો.' },
+  mic_other: { en: 'The microphone is not working here. Please type below.', hi: 'यहाँ माइक्रोफ़ोन काम नहीं कर रहा। कृपया नीचे लिखें।', mr: 'येथे मायक्रोफोन चालत नाही. कृपया खाली लिहा.', gu: 'અહીં માઇક્રોફોન ચાલતો નથી. કૃપા કરીને નીચે લખો.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

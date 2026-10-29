@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   // dev: the web app talks to the API on :8787 through the same origin
-  server: { proxy: { '/api': 'http://localhost:8787', '/f': 'http://localhost:8787' } },
+  server: {
+    proxy: Object.fromEntries(['/api', '/f', '/b', '/l', '/webhooks', '/healthz'].map((p) => [p, 'http://localhost:8787'])),
+  },
   build: { chunkSizeWarningLimit: 1500 },
 })

@@ -1,5 +1,5 @@
 /** Pure helpers for a calmer browser voice. No browser APIs here, so they are unit-tested. */
-export const CALM = { rate: 0.85, pitch: 0.9, pauseMs: 550 } as const
+export const CALM = { rate: 0.8, pitch: 1, volume: 0.85, pauseMs: 800 } as const
 
 /** Split into sentences (Latin and Devanagari/Gujarati full stops) so a pause can sit between them. */
 export function splitSentences(text: string): string[] {

@@ -143,6 +143,7 @@ export default function VentLive() {
               />
             </div>
             {noneFound && <p role="status" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('vl_none')}</p>}
+            {listener.error && !live && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t(listener.error === 'not-allowed' || listener.error === 'service-not-allowed' ? 'mic_denied' : listener.error === 'no-speech' ? 'mic_none' : listener.error === 'network' ? 'mic_net' : 'mic_other')}</p>}
             {err && <p role="alert" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t(err)}</p>}
             {text.trim() && stage !== 'sending' && (
               <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => void submit()} className={`mt-4 w-full ${live ? 'btn-ghost' : 'btn-primary'}`}>

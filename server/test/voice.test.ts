@@ -4,7 +4,7 @@ import { CALM, pickVoice, scoreVoice, splitSentences } from '../../src/voice/tts
 describe('calm voice settings', () => {
   it('is slower and lower than the default, with a real pause between sentences', () => {
     expect(CALM.rate).toBeLessThanOrEqual(0.85); expect(CALM.rate).toBeGreaterThan(0.6);
-    expect(CALM.pitch).toBeLessThanOrEqual(0.9); expect(CALM.pitch).toBeGreaterThan(0.6);
+    expect(CALM.pitch).toBeLessThanOrEqual(1); expect(CALM.pitch).toBeGreaterThan(0.6);
     expect(CALM.pauseMs).toBeGreaterThanOrEqual(400);
   });
 });

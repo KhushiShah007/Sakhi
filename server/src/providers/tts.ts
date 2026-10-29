@@ -4,7 +4,7 @@ export interface TtsAudio { audio: Buffer; mime: string }
 export interface TtsProvider { name: string; synth(text: string, lang: Lang): Promise<TtsAudio> }
 
 /** Calm, gentle delivery. Slower than normal, steady, no theatrics. Tunable per deployment, never a cloned voice. */
-export const CALM_VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75, style: 0, use_speaker_boost: false, speed: 0.9 } as const;
+export const CALM_VOICE_SETTINGS = { stability: 0.75, similarity_boost: 0.75, style: 0, use_speaker_boost: false, speed: 0.85 } as const;
 /** ElevenLabs "Sarah" is one of the stock premade voices. Override with ELEVENLABS_VOICE_ID; use only premade or licensed voices (never clone a real person). */
 export const DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
 const BREAK_MODELS = /eleven_(multilingual_v2|turbo_v2|turbo_v2_5|flash_v2|flash_v2_5)/;

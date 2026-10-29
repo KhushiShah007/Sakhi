@@ -41,7 +41,7 @@ function speakBrowser(text: string, lang: Lang, my: number, onEnd?: () => void) 
     if (my !== token) return
     if (i >= parts.length) { onEnd?.(); return }
     const u = new SpeechSynthesisUtterance(parts[i])
-    u.lang = SPEECH_LANG[lang]; u.rate = CALM.rate; u.pitch = CALM.pitch
+    u.lang = SPEECH_LANG[lang]; u.rate = CALM.rate; u.pitch = CALM.pitch; u.volume = CALM.volume
     if (voice) { try { u.voice = voice } catch { /* an odd voice object must never stop the app speaking */ } }
     const done = () => { if (my === token) window.setTimeout(() => next(i + 1), i + 1 < parts.length ? CALM.pauseMs : 0) }
     u.onend = done; u.onerror = done
@@ -103,6 +103,7 @@ export function useListen(lang: Lang): Listener {
   const [confidence, setConfidence] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const rec = useRef<Rec | null>(null)
+  const want = useRef(false)
   const finalRef = useRef('')
   const textRef = useRef('')
   const setText = useCallback((t: string) => { textRef.current = t; finalRef.current = t; setTextState(t) }, [])
@@ -125,19 +126,25 @@ export function useListen(lang: Lang): Listener {
       textRef.current = `${finalRef.current} ${interim}`.trim()
       setTextState(textRef.current)
     }
-    r.onerror = (e) => { setError(e.error); setListening(false) }
-    r.onend = () => setListening(false)
+    r.onerror = (e) => { want.current = false; setError(e.error); setListening(false) }
+    // browsers end a session after a pause in speech; keep going while she still wants to talk
+    r.onend = () => {
+      if (want.current && rec.current === r) { try { r.start(); return } catch { /* fall through */ } }
+      setListening(false)
+    }
     rec.current = r
-    try { r.start(); setListening(true) } catch { setError('start_failed') }
+    want.current = true
+    try { r.start(); setListening(true) } catch { want.current = false; setError('start_failed') }
   }, [lang])
 
   const stop = useCallback(() => {
+    want.current = false
     rec.current?.stop()
     setListening(false)
     return textRef.current
   }, [])
   const reset = useCallback(() => { finalRef.current = ''; textRef.current = ''; setTextState(''); setConfidence(null); setError(null) }, [])
 
-  useEffect(() => () => { rec.current?.abort(); stopSpeaking() }, [])
+  useEffect(() => () => { want.current = false; rec.current?.abort(); stopSpeaking() }, [])
   return { supported: sttSupported(), listening, text, confidence, error, start, stop, reset, setText }
 }

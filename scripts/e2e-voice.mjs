@@ -37,7 +37,7 @@ const open = async (page, hash) => { await page.goto('about:blank'); await page.
   await page.waitForFunction(() => window.__utts.length > 0)
   const first = (await page.evaluate(() => window.__utts))[0]
   ok('first cue is spoken with the browser voice', first.text === 'Breathe in', JSON.stringify(first))
-  ok('slower rate (0.85) and lower pitch (0.9)', first.rate === 0.85 && first.pitch === 0.9)
+  ok('slow rate (0.8) and natural pitch', first.rate === 0.8 && first.pitch === 1)
   ok('picks the natural-sounding voice over the basic one', /Natural/.test(first.voice || ''), first.voice)
   await page.evaluate(() => { window.__utts.length = 0 })
   await page.evaluate(() => document.querySelector('[aria-label="Forward 10 seconds"]').click())
@@ -79,7 +79,7 @@ const open = async (page, hash) => { await page.goto('about:blank'); await page.
   await open(page, 'right-now')
   await page.waitForFunction(() => window.__utts.length > 0, null, { timeout: 8000 })
   const first = (await page.evaluate(() => window.__utts))[0]
-  ok('falls back to the calm browser voice (once, not twice)', (await page.evaluate(() => window.__utts.filter((x) => x.text === 'Breathe in').length)) === 1 && first.text === 'Breathe in' && first.rate === 0.85 && first.pitch === 0.9, JSON.stringify(first))
+  ok('falls back to the calm browser voice (once, not twice)', (await page.evaluate(() => window.__utts.filter((x) => x.text === 'Breathe in').length)) === 1 && first.text === 'Breathe in' && first.rate === 0.8 && first.pitch === 1, JSON.stringify(first))
   ok('no page errors', errors.length === 0, JSON.stringify(errors))
   await ctx.close()
 }

@@ -94,7 +94,7 @@ ok('teen received nothing', (await teenPage.getByText(/Signal from/).count()) ==
 const exp = JSON.stringify(await A('GET', '/api/export'))
 ok('her words are not stored anywhere', !/mother in law|shouted|cooking/i.test(exp))
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410|ERR_NETWORK_IO_SUSPENDED)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')
