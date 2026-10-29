@@ -68,6 +68,13 @@ export function totalBand(total: number): MrsBand {
   return 'severe';
 }
 
+/** Published MRS subscale severity cut-offs (Heinemann et al.): upper bound of each band. */
+const SUB_CUTS: Record<MrsSubscale, [number, number, number]> = { somatic: [2, 4, 8], psychological: [1, 3, 6], urogenital: [0, 1, 3] };
+export function subscaleBand(sub: MrsSubscale, score: number): MrsBand {
+  const [none, mild, mod] = SUB_CUTS[sub];
+  return score <= none ? 'none' : score <= mild ? 'mild' : score <= mod ? 'moderate' : 'severe';
+}
+
 export interface MrsResult {
   items: Record<MrsItem, number>;
   somatic: number; psychological: number; urogenital: number; total: number; band: MrsBand;

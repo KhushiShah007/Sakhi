@@ -17,6 +17,7 @@ import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
 import { MAX_PIN_FAILS, PIN_LOCK_MS, PIN_RE, checkPin, hashPin } from '../privacy/pin.js';
 import { registerHome, registerMoments } from './home.js';
+import { registerBrief } from './brief.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
@@ -263,6 +264,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     const b = z.object({ purpose: z.enum(PURPOSES), granted: z.boolean() }).strict().safeParse(req.body);
     if (!b.success) return bad(reply, b.error);
     await db.query('INSERT INTO consents(user_id, purpose, granted, at) VALUES ($1,$2,$3,$4)', [req.auth!.userId, b.data.purpose, b.data.granted, now().toISOString()]);
+    if (b.data.purpose === 'doctor_brief' && !b.data.granted) await db.query('UPDATE brief_shares SET revoked_at=$2 WHERE user_id=$1 AND revoked_at IS NULL', [req.auth!.userId, now().toISOString()]);
     await audit(req.auth!.userId, 'user', b.data.granted ? 'consent_granted' : 'consent_withdrawn', b.data.purpose);
     return { ok: true };
   });
@@ -354,20 +356,6 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
 
   app.get('/api/logs', guarded, async (req) => { await audit(req.auth!.userId, 'user', 'read', 'logs'); return { logs: await loadLogs(req.auth!.userId, 90) }; });
 
-  app.get('/api/brief', guarded, async (req, reply) => {
-    const userId = req.auth!.userId;
-    if (!(await hasConsent(userId, 'doctor_brief'))) return reply.code(403).send({ error: 'consent_required', purpose: 'doctor_brief' });
-    const logs = await loadLogs(userId, 30);
-    const mrs = mrsFromLogs(logs);
-    const u = (await db.query<{ birth_year: number }>('SELECT birth_year FROM users WHERE id=$1', [userId]))[0];
-    await audit(userId, 'user', 'read', 'brief');
-    return {
-      source: 'her own confirmed logs, last 30 days', mrs, ruleOutQuestions: ruleOutQuestions({ mrs, weeksOfLogs: 4 }),
-      next20Years: next20Years(now().getFullYear() - u.birth_year),
-      footer: 'Supportive, not diagnostic. Rule-out questions are pending clinician review.', clinicianReviewed: false,
-    };
-  });
-
   // ---------- her rights: audit trail, export, deletion ----------
   app.get('/api/audit', guarded, async (req) => ({ entries: await db.query('SELECT actor, action, resource, at FROM audit_log WHERE user_id=$1 ORDER BY id DESC LIMIT 200', [req.auth!.userId]) }));
 
@@ -398,6 +386,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerFamily(app, ctx);
   registerHome(app, ctx);
   registerMoments(app, ctx);
+  registerBrief(app, ctx);
 
   return app;
 }

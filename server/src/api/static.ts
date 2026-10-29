@@ -6,7 +6,7 @@ const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon',
 };
-const API_PREFIXES = ['/api/', '/f/', '/webhooks/', '/healthz'];
+const API_PREFIXES = ['/api/', '/f/', '/b/', '/webhooks/', '/healthz'];
 
 /** Serve the built web app from the same origin as the API (no CORS, cookies just work). SPA uses hash routes, so only "/" needs index.html. */
 export function serveStatic(app: FastifyInstance, dir: string): boolean {

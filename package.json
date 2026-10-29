@@ -26,6 +26,7 @@
     "fastify": "^5.12.7",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
+    "pdfkit": "^0.20.2",
     "pg": "^8.23.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
+    "@types/pdfkit": "^0.17.7",
     "@types/pg": "^8.23.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

@@ -12,7 +12,7 @@ const IST_MS = 5.5 * 3600_000;
 export const istDay = (d: Date) => new Date(d.getTime() + IST_MS).toISOString().slice(0, 10);
 const addDays = (day: string, n: number) => new Date(Date.parse(day + 'T00:00:00Z') + n * 86400_000).toISOString().slice(0, 10);
 
-interface LogRow { symptom: Symptom; severity: number; at: string; trigger: string }
+export interface LogRow { symptom: Symptom; severity: number; at: string; trigger: string; time_of_day: string }
 
 /** Her own recent signals for the Symptom Weather score: distinct days, so one bad night counts once. */
 export function signalsFrom(rows: LogRow[], today: string): RecentSignals {
@@ -28,7 +28,7 @@ export function signalsFrom(rows: LogRow[], today: string): RecentSignals {
 }
 
 export const loadRecentLogs = (db: Db, userId: string, now: Date, days = 40) =>
-  db.query<LogRow>('SELECT symptom, severity, at, trigger FROM logs WHERE user_id=$1 AND at >= $2 ORDER BY at', [userId, new Date(now.getTime() - days * 86400_000).toISOString()]);
+  db.query<LogRow>('SELECT symptom, severity, at, trigger, time_of_day FROM logs WHERE user_id=$1 AND at >= $2 ORDER BY at', [userId, new Date(now.getTime() - days * 86400_000).toISOString()]);
 
 export async function weatherFor(db: Db, userId: string, now: Date, provider: WeatherProvider, override?: Partial<WeatherForecast>) {
   const city = (await db.query<{ city: string | null }>('SELECT city FROM users WHERE id=$1', [userId]))[0]?.city;
