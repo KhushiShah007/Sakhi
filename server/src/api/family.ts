@@ -6,7 +6,7 @@ import { ALERT_TEXT, CARD_TEXT, CARD_TYPES, LESSONS, type CardType } from '../co
 import type { Db } from '../db/index.js';
 import { decrypt, encrypt } from '../privacy/crypto.js';
 import type { WeatherProvider } from '../providers/weather.js';
-import { weatherFor } from './home.js';
+import { istDay, weatherFor } from './home.js';
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const ROLES = ['husband', 'son', 'daughter', 'teen', 'sister', 'friend', 'asha', 'other'] as const;
@@ -66,7 +66,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
   const newToken = () => randomBytes(24).toString('base64url');
   const linkFor = (req: FastifyRequest, t: string) => `${baseFor(req)}/#/f/${t}`;
   const iso = () => now().toISOString();
-  const day = (offset = 0) => new Date(now().getTime() + offset * 86400_000).toISOString().slice(0, 10);
+  const day = (offset = 0) => istDay(new Date(now().getTime() + offset * 86400_000)); // India time, to match Home: a UTC date is the wrong day for the first 5.5 hours
 
   /** The ONE function that builds what a family member sees. Her preview uses it too, so "preview" is exact by construction. */
   async function familyView(p: PersonRow) {

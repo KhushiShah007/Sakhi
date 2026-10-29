@@ -24,12 +24,14 @@ import { registerHr } from './hr.js';
 import { registerAdmin } from './admin.js';
 import { registerIvr } from './ivr.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
+import { pushFromEnv, type PushProvider } from '../providers/push.js';
+import { registerReminders } from './reminders.js';
 import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
-export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider; tts?: TtsProvider | null }
+export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider; tts?: TtsProvider | null; push?: PushProvider | null }
 interface Auth { userId: string; csrf: string; locked: boolean }
 const LOCKED_OK = new Set(['GET /api/me', 'POST /api/pin/verify', 'POST /api/lock', 'POST /api/auth/logout']);
 declare module 'fastify' { interface FastifyRequest { auth?: Auth } }
@@ -42,7 +44,7 @@ const safeEq = (a: string, b: string) => a.length === b.length && timingSafeEqua
 const phoneSchema = z.string().transform((s) => s.replace(/[\s-]/g, '')).pipe(z.string().regex(/^\+?\d{10,13}$/));
 const langSchema = z.enum(LANGS as [Lang, ...Lang[]]);
 
-export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env), weather = weatherFromEnv(env), tts = ttsFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env), weather = weatherFromEnv(env), tts = ttsFromEnv(env), push = pushFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
   assertSafeBoot(env);
   const key = keyFromEnv(env);
   const prod = env.NODE_ENV === 'production';
@@ -119,7 +121,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     return r[0]?.granted === true;
   };
 
-  app.get('/healthz', async () => ({ ok: true, demoAuth, llm: llm?.name ?? 'rules', tts: tts ? 'server' : 'browser' })); // provider kind only, never a key
+  app.get('/healthz', async () => ({ ok: true, demoAuth, llm: llm?.name ?? 'rules', tts: tts ? 'server' : 'browser', push: !!push })); // provider kind only, never a key
 
   // ---------- auth ----------
   app.post('/api/auth/otp/request', async (req, reply) => {
@@ -396,6 +398,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
     return {
       exportedAt: now().toISOString(), profile: { ...profile, phone: decrypt(phone_enc, key, `phone:${userId}`) },
       logs: await db.query('SELECT symptom, severity, at, time_of_day, trigger FROM logs WHERE user_id=$1 ORDER BY at', [userId]),
+      reminders: (await db.query('SELECT checkin_on, checkin_time, weather_on FROM reminders WHERE user_id=$1', [userId]))[0] ?? null,
       consents: await db.query('SELECT purpose, granted, at FROM consents WHERE user_id=$1 ORDER BY id', [userId]),
       audit: await db.query('SELECT actor, action, resource, at FROM audit_log WHERE user_id=$1 ORDER BY id', [userId]),
     };
@@ -419,6 +422,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerBrief(app, ctx);
   registerLetters(app, ctx);
   registerNight(app, ctx);
+  registerReminders(app, { ...ctx, push });
   registerHr(app, ctx);
   registerAdmin(app, ctx);
   registerIvr(app, { ...ctx, phoneHash });

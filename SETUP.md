@@ -24,6 +24,7 @@ Tests: `npm test` (unit/integration, 257 tests incl. the 80-prompt AI safety sui
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TEMPLATE_CARD`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | the no-install family link page | cards sent on WhatsApp. See below |
 | `WEATHER_PROVIDER=none` | Open-Meteo forecast + air quality, **no key needed** | turns the forecast off |
 | `ELEVENLABS_API_KEY` (+ `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL`) | calm browser voice (rate 0.8, volume 0.85, best natural voice, sentence pauses) | natural server voice via `/api/tts`, cached, with automatic fallback to the browser voice. Key stays in `.env` (gitignored) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT`, e.g. `mailto:you@example.com`) | reminders off (Me shows that they are unavailable) | opt-in Web Push: a daily check-in nudge and a morning heads-up on high Symptom Weather days. Lock-screen text never mentions health; nothing is sent 21:00 to 08:00 IST. Generate keys: `npx web-push generate-vapid-keys` |
 | `IVR_WEBHOOK_SECRET` | missed-call line off for providers (the in-app simulator always works) | your telephony provider (Twilio/Exotel) posts missed calls and speech to `/webhooks/ivr/*` with header `x-ivr-secret` |
 | `ADMIN_KEY` | admin console off | `/#/admin`: clinician-review register, pilot analytics, Atlas CSV |
 | `HELPLINES_JSON` | 112 and Tele-MANAS 14416 | your own helplines |

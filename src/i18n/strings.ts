@@ -631,6 +631,18 @@ export const S = {
   vs_auto: { en: 'Best available', hi: 'सबसे अच्छी उपलब्ध', mr: 'सर्वोत्तम उपलब्ध', gu: 'શ્રેષ્ઠ ઉપલબ્ધ' },
   vs_preview: { en: 'Hear a sample', hi: 'नमूना सुनें', mr: 'नमुना ऐका', gu: 'નમૂનો સાંભળો' },
   vs_sample: { en: 'Breathe in slowly. And let it go. You are doing well.', hi: 'धीरे से साँस लें। और छोड़ दें। आप ठीक कर रही हैं।', mr: 'हळूच श्वास घ्या. आणि सोडून द्या. तुम्ही छान करत आहात.', gu: 'ધીમેથી શ્વાસ લો. અને છોડી દો. તમે સરસ કરી રહ્યા છો.' },
+
+  // ---- reminders
+  rm_title: { en: 'Reminders', hi: 'याद दिलाना', mr: 'आठवण', gu: 'યાદ અપાવવું' },
+  rm_checkin: { en: 'Daily check-in reminder', hi: 'रोज़ का चेक-इन रिमाइंडर', mr: 'रोजची चेक-इन आठवण', gu: 'રોજની ચેક-ઇન યાદ' },
+  rm_checkin_s: { en: 'One soft nudge a day. It never mentions your health.', hi: 'दिन में एक कोमल याद। इसमें आपकी सेहत की कोई बात नहीं होती।', mr: 'दिवसातून एक हळुवार आठवण. त्यात तुमच्या आरोग्याचा उल्लेख नसतो.', gu: 'દિવસમાં એક હળવી યાદ. તેમાં તમારા સ્વાસ્થ્યનો કોઈ ઉલ્લેખ નથી.' },
+  rm_time: { en: 'Time', hi: 'समय', mr: 'वेळ', gu: 'સમય' },
+  rm_weather: { en: 'Heavy-day heads-up', hi: 'भारी दिन की पूर्व सूचना', mr: 'जड दिवसाची पूर्वसूचना', gu: 'ભારે દિવસની અગાઉથી જાણ' },
+  rm_weather_s: { en: 'Only on days your Symptom Weather looks high, in the morning.', hi: 'केवल उन दिनों जब आपका सिम्प्टम वेदर ऊँचा दिखे, सुबह।', mr: 'फक्त ज्या दिवशी तुमचे सिम्प्टम वेदर जास्त दिसते, सकाळी.', gu: 'ફક્ત એવા દિવસે જ્યારે તમારું સિમ્પ્ટમ વેધર ઊંચું દેખાય, સવારે.' },
+  rm_quiet: { en: 'Nothing is ever sent between 9 pm and 8 am, and never during 3 AM Mode. Turn it off any time.', hi: 'रात 9 से सुबह 8 बजे के बीच कुछ नहीं भेजा जाता, और 3 AM मोड में कभी नहीं। कभी भी बंद करें।', mr: 'रात्री 9 ते सकाळी 8 दरम्यान काहीही पाठवले जात नाही, आणि 3 AM मोडमध्ये कधीच नाही. केव्हाही बंद करा.', gu: 'રાત્રે 9 થી સવારે 8 વચ્ચે કંઈ મોકલાતું નથી, અને 3 AM મોડમાં ક્યારેય નહીં. ગમે ત્યારે બંધ કરો.' },
+  rm_denied: { en: 'Notifications are blocked for this site. You can allow them in the browser settings.', hi: 'इस साइट के लिए सूचनाएँ बंद हैं। ब्राउज़र सेटिंग में अनुमति दे सकती हैं।', mr: 'या साइटसाठी सूचना बंद आहेत. ब्राउझर सेटिंगमध्ये परवानगी देऊ शकता.', gu: 'આ સાઇટ માટે સૂચનાઓ બંધ છે. બ્રાઉઝર સેટિંગમાં પરવાનગી આપી શકો.' },
+  rm_failed: { en: 'Could not set up reminders on this device. Please try again later.', hi: 'इस डिवाइस पर रिमाइंडर नहीं बन सके। कृपया बाद में कोशिश करें।', mr: 'या डिव्हाइसवर आठवण सेट करता आली नाही. कृपया नंतर प्रयत्न करा.', gu: 'આ ડિવાઇસ પર યાદ સેટ થઈ શકી નહીં. કૃપા કરીને પછી પ્રયત્ન કરો.' },
+  rm_unavailable: { en: 'Reminders are not available here (they need a notification-capable browser and a server set up for them). Everything else works without them.', hi: 'यहाँ रिमाइंडर उपलब्ध नहीं हैं (इसके लिए सूचना-सक्षम ब्राउज़र और सेट-अप सर्वर चाहिए)। बाकी सब बिना इसके चलता है।', mr: 'येथे आठवण उपलब्ध नाहीत (त्यासाठी सूचना-सक्षम ब्राउझर आणि सेट-अप सर्व्हर लागतो). बाकी सर्व त्याशिवाय चालते.', gu: 'અહીં યાદ ઉપલબ્ધ નથી (તેના માટે સૂચના-સક્ષમ બ્રાઉઝર અને સેટ-અપ સર્વર જોઈએ). બાકી બધું તેના વગર ચાલે છે.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

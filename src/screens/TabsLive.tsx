@@ -8,6 +8,7 @@ import { BottomNav } from '../components/Frame'
 import { Screen, Stagger } from '../components/ui'
 import { useGo } from '../components/nav'
 import VoiceSettings from '../components/VoiceSettings'
+import ReminderSettings from '../components/ReminderSettings'
 import { Avatar } from '../illustrations/Woman'
 import { MoodBlob } from '../illustrations/Blob'
 import type { Mood } from '../mock/user'
@@ -134,6 +135,9 @@ export function MeLive() {
 
         <h2 className="h-section mb-2 mt-6">{t('vs_title')}</h2>
         <VoiceSettings />
+
+        <h2 className="h-section mb-2 mt-6">{t('rm_title')}</h2>
+        <ReminderSettings />
 
         <h2 className="h-section mb-2 mt-6">{t('me_tools')}</h2>
         <div className="glass divide-y divide-white/80 rounded-[24px] px-3">

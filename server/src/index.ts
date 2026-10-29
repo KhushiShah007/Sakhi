@@ -4,6 +4,9 @@ import { buildApp } from './api/app.js';
 import { serveStatic } from './api/static.js';
 import { generateDueLetters } from './api/letters.js';
 import { keyFromEnv } from './privacy/crypto.js';
+import { pushFromEnv } from './providers/push.js';
+import { weatherFromEnv } from './providers/weather.js';
+import { sendDueReminders } from './api/reminders.js';
 import { syncContent } from './api/admin.js';
 
 const db = await dbFromEnv();
@@ -18,3 +21,7 @@ const served = serveStatic(app, process.env.STATIC_DIR || 'dist');
 const port = Number(process.env.PORT ?? 8787);
 await app.listen({ port, host: process.env.HOST ?? '0.0.0.0' });
 console.log(`sakhi api on :${port} (migrations applied: ${applied.length}, llm: ${process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'rules'}, web: ${served ? 'served' : 'not built'})`);
+
+// Reminders: checked every minute; each is sent at most once a day and only between 08:00 and 21:00 India time.
+const push = pushFromEnv(process.env);
+if (push) { const w = weatherFromEnv(process.env); setInterval(() => sendDueReminders(db, jobKey, push, w, new Date()).catch((e) => console.error('reminder job failed:', (e as Error).message)), 60_000).unref(); }
