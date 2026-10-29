@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell, Check, ChevronRight, Droplets, FileHeart, Mail, Mic, Moon, Pause, PhoneCall, Play, SkipBack, SkipForward,
   Sprout, Theater, Thermometer, Waves, Wind, ListChecks, CircleDot,
 } from 'lucide-react'
-import { useI18n } from '../i18n'
+import { useI18n, type Lang } from '../i18n'
+import { api } from '../api/client'
+import { useHome, type HomeData } from '../api/home'
+import { useSession } from '../api/session'
+import { speak, stopSpeaking } from '../voice/speech'
 import type { StrKey } from '../i18n/strings'
 import { BottomNav } from '../components/Frame'
 import { Screen, Segmented, Stagger, Waveform, useToast } from '../components/ui'
@@ -12,15 +16,20 @@ import { useGo, useParam } from '../components/nav'
 import { Avatar } from '../illustrations/Woman'
 import { EmptyBlob, MoodBlob } from '../illustrations/Blob'
 import { CoolDoodle, ForecastGlyph, SayDoodle, SunCloud, VentDoodle } from '../illustrations/art'
-import { dayLetters, month, week, weatherTomorrow, MOOD_COLOR } from '../mock/user'
+import { dayLetters, month, week, weatherTomorrow, MOOD_COLOR, type Mood } from '../mock/user'
 
 type Range = 'daily' | 'weekly' | 'monthly'
 
-function WeekStrip() {
+function WeekStrip({ data }: { data?: HomeData | null }) {
   const { t, lang } = useI18n()
   const go = useGo()
   const [range, setRange] = useState<Range>('weekly')
   const letters = dayLetters(lang)
+  const cells = data
+    ? data.week.map((w) => ({ date: w.day, mood: w.mood ?? undefined, kind: w.kind }))
+    : week.map((w) => ({ date: w.date, mood: w.mood, kind: w.kind as string }))
+  const monthMoods: (Mood | null)[] = data ? data.month : month
+  const todayMood = data ? data.week.find((w) => w.kind === 'today')?.mood ?? null : 'hot'
   return (
     <div className="glass rounded-[28px] p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -37,7 +46,7 @@ function WeekStrip() {
       <AnimatePresence mode="wait">
         {range === 'weekly' && (
           <motion.div key="w" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-7 gap-1">
-            {week.map((d, i) => {
+            {cells.map((d, i) => {
               const today = d.kind === 'today'
               const fc = d.kind === 'forecast'
               return (
@@ -57,17 +66,21 @@ function WeekStrip() {
         )}
         {range === 'daily' && (
           <motion.div key="d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3 rounded-2xl bg-white/60 p-3">
-            <MoodBlob mood="hot" size={52} />
+            {todayMood ? <MoodBlob mood={todayMood} size={52} /> : <EmptyBlob size={52} />}
             <div className="min-w-0">
-              <div className="font-semibold">{t('mood_hot')}</div>
-              <div className="text-[14px] text-ink-soft">{t('sym_hot')} · {t('sym_sleep')} · {t('sym_exhaust')}</div>
+              <div className="font-semibold">{todayMood ? t(`mood_${todayMood}` as StrKey) : t('ci_none')}</div>
+              {data ? (
+                <div className="text-[14px] text-ink-soft">{data.todayTop.map((x) => t(`sy_${x.symptom}` as StrKey)).join(' · ')}</div>
+              ) : (
+                <div className="text-[14px] text-ink-soft">{t('sym_hot')} · {t('sym_sleep')} · {t('sym_exhaust')}</div>
+              )}
             </div>
           </motion.div>
         )}
         {range === 'monthly' && (
           <motion.div key="m" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-10 gap-2 px-1">
-            {month.map((m, i) => (
-              <span key={i} className="aspect-square rounded-full" style={{ background: MOOD_COLOR[m] }} title={m} />
+            {monthMoods.map((m, i) => (
+              <span key={i} className="aspect-square rounded-full" style={{ background: m ? MOOD_COLOR[m] : '#F1E4E8' }} title={m ?? ''} />
             ))}
           </motion.div>
         )}
@@ -77,7 +90,7 @@ function WeekStrip() {
           <Sprout size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold leading-tight">{t('checked_in')}</div>
+          <div className="text-[15px] font-semibold leading-tight">{data ? (data.daysCheckedLast7 > 0 ? t(data.daysCheckedLast7 === 1 ? 'ci_day1' : 'ci_days', { n: data.daysCheckedLast7 }) : t('ci_none')) : t('checked_in')}</div>
           <div className="text-[13px] leading-snug text-ink-soft">{t('checked_in_s')}</div>
         </div>
         <button onClick={() => go('/checkin')} aria-label={t('t_checkin')} className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%, #fff, #FCD6DC 60%, #F7B7C6)', boxShadow: '0 0 18px 4px rgba(251,162,171,.6)' }}>
@@ -88,42 +101,60 @@ function WeekStrip() {
   )
 }
 
-function WeatherCard({ open: openInit = false }: { open?: boolean }) {
+function WeatherCard({ open: openInit = false, data, onShared }: { open?: boolean; data?: HomeData | null; onShared?: () => void }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(openInit)
+  const [busy, setBusy] = useState(false)
+  const w = data?.weather
+  const tm = w?.tomorrow ?? null
+  const title = !w ? t('risk_high') : w.level === 'high' ? t('risk_high') : w.level === 'moderate' ? t('risk_moderate') : t('risk_low')
+  const why = !w ? t('risk_why') : w.factors.length ? t('wx_why', { list: w.factors.map((f) => t(`wf_${f.id}` as StrKey)).join(', ') }) : t('wx_calm')
+  const tell = async () => {
+    setBusy(true)
+    try { await api('POST', '/api/symptom-weather', { share: true }); onShared?.() } finally { setBusy(false) }
+  }
   return (
-    <motion.button layout onClick={() => setOpen((o) => !o)} className="glass relative w-full overflow-hidden rounded-[28px] p-4 text-left" style={{ background: 'linear-gradient(135deg, rgba(255,223,195,0.9), rgba(255,255,255,0.75) 60%)' }}>
+    <motion.div layout className="glass relative w-full overflow-hidden rounded-[28px] p-4 text-left" style={{ background: 'linear-gradient(135deg, rgba(255,223,195,0.9), rgba(255,255,255,0.75) 60%)' }}>
+      <button aria-expanded={open} onClick={() => setOpen((o) => !o)} className="block w-full text-left">
       <div className="flex items-start gap-3">
         <SunCloud className="h-[78px] w-[92px] shrink-0 floaty" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-rose-pressed">
             {t('weather')} · {t('tomorrow')}
           </div>
-          <div className="mt-0.5 text-[18px] font-bold leading-snug">{t('risk_high')}</div>
-          <div className="text-[14px] leading-snug text-ink-soft">{t('risk_why')}</div>
+          <div className="mt-0.5 text-[18px] font-bold leading-snug">{title}</div>
+          <div className="text-[14px] leading-snug text-ink-soft">{why}</div>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <span className="chip"><Thermometer size={16} className="text-rose" />{weatherTomorrow.tempC}°C</span>
-        <span className="chip"><Droplets size={16} className="text-peri-deep" />{t('humidity')} {weatherTomorrow.humidity}%</span>
-        <span className="chip"><Wind size={16} className="text-ink-soft" />AQI {weatherTomorrow.aqi}</span>
-      </div>
+      {!w || tm ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="chip"><Thermometer size={16} className="text-rose" />{tm ? tm.tempC : weatherTomorrow.tempC}°C</span>
+          <span className="chip"><Droplets size={16} className="text-peri-deep" />{t('humidity')} {tm ? tm.humidityPct : weatherTomorrow.humidity}%</span>
+          {(!w || tm?.aqi != null) && <span className="chip"><Wind size={16} className="text-ink-soft" />AQI {tm ? tm.aqi : weatherTomorrow.aqi}</span>}
+        </div>
+      ) : (
+        <p className="mt-3 text-[14.5px] leading-snug text-ink-soft">{data?.city ? t('wx_offline') : t('wx_unknown')}</p>
+      )}
+      </button>
       <AnimatePresence>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="mt-3 rounded-2xl bg-white/70 p-3">
               <div className="mb-1.5 text-[14px] font-semibold text-rose-pressed">{t('w_tips')}</div>
-              {(['w_tip1', 'w_tip2', 'w_tip3'] as StrKey[]).map((k, i) => (
-                <div key={k} className="flex items-start gap-2 py-1 text-[15px] leading-snug">
-                  {i === 2 ? <Check size={18} className="mt-0.5 shrink-0 text-[#2F6B4F]" /> : <CircleDot size={18} className="mt-0.5 shrink-0 text-peach" />}
-                  {t(k)}
-                </div>
+              {(['w_tip1', 'w_tip2'] as StrKey[]).map((k) => (
+                <div key={k} className="flex items-start gap-2 py-1 text-[15px] leading-snug"><CircleDot size={18} className="mt-0.5 shrink-0 text-peach" />{t(k)}</div>
               ))}
+              {(!w || w.shared) ? (
+                <div className="flex items-start gap-2 py-1 text-[15px] leading-snug"><Check size={18} className="mt-0.5 shrink-0 text-[#2F6B4F]" />{t('w_tip3')}</div>
+              ) : (
+                <button disabled={busy} onClick={() => void tell()} className="mt-1.5 inline-flex min-h-[48px] items-center rounded-full bg-rose px-5 text-[15px] font-semibold text-white disabled:opacity-60">{t('wx_tell')}</button>
+              )}
+              {w && <p className="mt-2 text-[13px] leading-snug text-ink-soft">{t('wx_estimate')}</p>}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.button>
+    </motion.div>
   )
 }
 
@@ -159,10 +190,26 @@ function SessionCards() {
   )
 }
 
+const RELAX: StrKey[] = ['rx_1', 'rx_2', 'rx_3', 'rx_4', 'rx_5', 'rx_6']
+
 function PlanRelax() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [done, setDone] = useState<Record<string, boolean>>({ plan1: true })
   const [playing, setPlaying] = useState(false)
+  const [line, setLine] = useState(0)
+  const run = useRef(0)
+  const say = (i: number, l: Lang) => {
+    const id = ++run.current
+    setLine(i); setPlaying(true)
+    speak(t(RELAX[i]), l, () => {
+      if (id !== run.current) return
+      if (i + 1 < RELAX.length) window.setTimeout(() => id === run.current && say(i + 1, l), 2500) // a pause to breathe between lines
+      else { setPlaying(false); setLine(0) }
+    })
+  }
+  const toggle = () => { if (playing) { run.current++; stopSpeaking(); setPlaying(false) } else say(line, lang) }
+  const skip = (d: number) => { const n = Math.min(RELAX.length - 1, Math.max(0, line + d)); if (playing) say(n, lang); else setLine(n) }
+  useEffect(() => () => { run.current++; stopSpeaking() }, [])
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="glass rounded-[26px] p-4">
@@ -180,33 +227,35 @@ function PlanRelax() {
       <div className="glass flex flex-col rounded-[26px] p-4" style={{ background: 'linear-gradient(160deg, rgba(243,232,251,0.95), rgba(255,255,255,0.7))' }}>
         <span className="mb-2 grid h-9 w-9 place-items-center rounded-full bg-lavender text-peri-deep"><Waves size={18} /></span>
         <div className="text-[16px] font-semibold">{t('relax')}</div>
-        <div className="text-[14px] text-ink-soft">{t('relax_track')} · 8:00</div>
+        <div className="text-[14px] text-ink-soft">{t('relax_track')} · {line + 1}/{RELAX.length}</div>
         <Waveform bars={18} active={playing} height={30} color="#6C7BD9" className="my-2" />
         <div className="mt-auto flex items-center justify-between">
-          <button aria-label="Previous" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft"><SkipBack size={18} /></button>
-          <button aria-label={playing ? 'Pause' : 'Play'} onClick={() => setPlaying((p) => !p)} className="grid h-12 w-12 place-items-center rounded-full bg-rose text-white shadow-soft">
+          <button aria-label="Previous" onClick={() => skip(-1)} className="grid h-12 w-12 place-items-center rounded-full text-ink-soft"><SkipBack size={18} /></button>
+          <button aria-label={playing ? 'Pause' : 'Play'} onClick={toggle} className="grid h-12 w-12 place-items-center rounded-full bg-rose text-white shadow-soft">
             {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
           </button>
-          <button aria-label="Next" className="grid h-10 w-10 place-items-center rounded-full text-ink-soft"><SkipForward size={18} /></button>
+          <button aria-label="Next" onClick={() => skip(1)} className="grid h-12 w-12 place-items-center rounded-full text-ink-soft"><SkipForward size={18} /></button>
         </div>
       </div>
     </div>
   )
 }
 
-function Milestones() {
+function Milestones({ data }: { data?: HomeData | null }) {
   const { t } = useI18n()
+  const m = data?.milestones
   const items: { k: StrKey; state: 'done' | 'next' }[] = [
-    { k: 'ms1', state: 'done' },
-    { k: 'ms3', state: 'done' },
-    { k: 'ms2', state: 'next' },
+    { k: 'ms1', state: !m || m.firstWeek ? 'done' : 'next' },
+    { k: 'ms3', state: !m || m.firstSignal ? 'done' : 'next' },
+    { k: 'ms2', state: m && !m.firstBrief ? 'next' : m ? 'done' : 'next' },
   ]
+  const doneN = items.filter((i) => i.state === 'done').length
   return (
     <div className="glass rounded-[26px] p-4">
       <div className="mb-3 text-[16px] font-semibold">{t('milestones')}</div>
       <div className="relative mb-2 flex items-center justify-between px-6">
         <div className="absolute inset-x-8 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white" />
-        <div className="absolute left-8 right-1/2 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-blush" />
+        <div className="absolute left-8 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-blush" style={{ width: `calc((100% - 4rem) * ${Math.max(0, doneN - 1) / 2})` }} />
         {items.map((it) => (
           <span key={it.k} className={`relative z-10 grid h-9 w-9 place-items-center rounded-full ${it.state === 'done' ? 'bg-rose text-white shadow-soft' : 'border-2 border-dashed border-rose bg-white text-rose-pressed'}`}>
             {it.state === 'done' ? <Check size={18} strokeWidth={3} /> : <FileHeart size={16} />}
@@ -249,31 +298,55 @@ function MoreRow() {
 }
 
 export default function Home({ weatherOpen }: { weatherOpen?: boolean }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const go = useGo()
   const toast = useToast()
   const wParam = useParam('weather')
   const wOpen = weatherOpen ?? wParam === 'open'
+  const { live, data, error, reload } = useHome()
+  const { me } = useSession()
+  const waiting = live && !data // never show the scripted demo week to a real user while their data loads
+  const hour = new Date().getHours()
+  const greeting = live ? t(hour < 12 ? 'gm_morning' : hour < 17 ? 'gm_afternoon' : 'gm_evening', { name: data?.name ?? me?.name ?? '' }).replace(/,\s*$/, '') : t('greet')
+  const dateLine = live ? new Intl.DateTimeFormat(`${lang}-IN`, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()) : t('today_date')
   return (
     <Screen nav={<BottomNav active="home" />}>
       <div className="px-5 pb-36">
         <Stagger className="flex items-start justify-between pb-4 pt-2">
           <div className="min-w-0">
-            <div className="text-[14px] font-medium text-ink-soft">{t('today_date')}</div>
-            <h1 className="text-[27px] font-bold leading-tight tracking-tight">{t('greet')}</h1>
+            <div className="text-[14px] font-medium text-ink-soft">{dateLine}</div>
+            <h1 className="text-[27px] font-bold leading-tight tracking-tight">{greeting}</h1>
             <p className="mt-0.5 text-[16px] text-ink-soft">{t('greet_s')}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 pt-1">
-            <button className="icon-btn relative" aria-label="Notifications" onClick={() => toast.show()}>
-              <Bell size={20} />
-              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-rose" />
-            </button>
+            {!live && (
+              <button className="icon-btn relative" aria-label="Notifications" onClick={() => toast.show()}>
+                <Bell size={20} />
+                <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-rose" />
+              </button>
+            )}
             <button onClick={() => go('/me')} aria-label={t('nav_me')}><Avatar size={48} /></button>
           </div>
         </Stagger>
 
-        <Stagger delay={0.05}><WeekStrip /></Stagger>
-        <Stagger delay={0.1} className="mt-3"><WeatherCard open={wOpen} /></Stagger>
+        {waiting ? (
+          error ? (
+            <div role="alert" className="glass rounded-[28px] p-5 text-center">
+              <p className="text-[16px]">{t('fl_error')}</p>
+              <button onClick={() => void reload()} className="btn-primary mt-3">{t('fl_retry')}</button>
+            </div>
+          ) : (
+            <div role="status" aria-label="loading" className="flex flex-col gap-3">
+              <div className="glass h-[212px] animate-pulse rounded-[28px]" />
+              <div className="glass h-[150px] animate-pulse rounded-[28px]" />
+            </div>
+          )
+        ) : (
+          <>
+            <Stagger delay={0.05}><WeekStrip data={data} /></Stagger>
+            <Stagger delay={0.1} className="mt-3"><WeatherCard open={wOpen} data={data} onShared={() => void reload()} /></Stagger>
+          </>
+        )}
 
         <Stagger delay={0.15} className="mb-3 mt-6 flex items-center gap-2">
           <h2 className="h-section">{t('start_session')}</h2>
@@ -282,7 +355,7 @@ export default function Home({ weatherOpen }: { weatherOpen?: boolean }) {
         <Stagger delay={0.2}><SessionCards /></Stagger>
 
         <Stagger delay={0.25} className="mt-6"><PlanRelax /></Stagger>
-        <Stagger delay={0.3} className="mt-3"><Milestones /></Stagger>
+        {!waiting && <Stagger delay={0.3} className="mt-3"><Milestones data={data} /></Stagger>}
 
         <div className="mb-3 mt-6 flex items-center justify-between">
           <h2 className="h-section">{t('more')}</h2>

@@ -20,6 +20,7 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] API serves the built web app (same origin, no CORS); dev proxy in vite config
 - [x] Web app wired to API (section 1): session context + API client, offline/anon/authed modes (static hosting keeps the demo), login with OTP + birth-year gate, per-purpose consent screen, live onboarding (language, name, stage, city, people + family links, voice answers with typed fallback), route guards, prototype strip removed when live (DEMO badge only if DEMO_MODE=true); verified by `node scripts/e2e-onboarding.mjs`
 - [x] Live Vent Mode (section 2): voice (browser STT) or typed, live symptom chips from a rules-only preview endpoint, crisis interrupts mid-sentence with helplines and stores nothing, refusals, tap-to-correct severity/trigger, save only what she confirms, reflection read aloud; `node scripts/e2e-vent.mjs`
+- [x] Live Home (section 3): `/api/home` (week strip, 30-day moods, check-in count without streaks, milestones from real events), Open-Meteo weather provider (keyless, cached, never throws), Symptom Weather estimate with localized contributing factors, "Tell my family" shares only the level, relax tile plays a guided wind-down in the browser voice, skeletons instead of demo data while loading; `node scripts/e2e-home.mjs`
 - [x] `.env.example`
 - [x] CI: typecheck, tests, safety suite, prototype build
 

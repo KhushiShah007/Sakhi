@@ -5,7 +5,8 @@ import { LANGS, type Lang } from '../config.js';
 import { ALERT_TEXT, CARD_TEXT, CARD_TYPES, LESSONS, type CardType } from '../content/family.js';
 import type { Db } from '../db/index.js';
 import { decrypt, encrypt } from '../privacy/crypto.js';
-import { symptomWeather } from '../safety/weather.js';
+import type { WeatherProvider } from '../providers/weather.js';
+import { weatherFor } from './home.js';
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const ROLES = ['husband', 'son', 'daughter', 'teen', 'sister', 'friend', 'asha', 'other'] as const;
@@ -44,7 +45,7 @@ export function messengerFromEnv(env: NodeJS.ProcessEnv = process.env): Messenge
 }
 
 export interface Ctx {
-  db: Db; key: Buffer; env: NodeJS.ProcessEnv; now: () => Date; messenger: Messenger;
+  db: Db; key: Buffer; env: NodeJS.ProcessEnv; now: () => Date; messenger: Messenger; weather: WeatherProvider;
   audit: (userId: string, actor: string, action: string, resource: string) => Promise<unknown>;
   guarded: { preHandler: (req: FastifyRequest, reply: FastifyReply) => Promise<unknown> };
   bad: (reply: FastifyReply, e: unknown) => FastifyReply;
@@ -181,9 +182,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
     const b = z.object({ tempC: z.number().min(-20).max(60).optional(), humidityPct: z.number().min(0).max(100).optional(), aqi: z.number().min(0).max(1000).optional(), share: z.boolean().optional() }).strict().safeParse(req.body);
     if (!b.success) return c.bad(reply, b.error);
     const userId = req.auth!.userId;
-    const rows = await db.query<{ symptom: string; d: string; trigger: string }>("SELECT symptom, trigger, to_char(at,'YYYY-MM-DD') AS d FROM logs WHERE user_id=$1 AND at >= $2", [userId, new Date(now().getTime() - 7 * 86400_000).toISOString()]);
-    const days = (names: string[]) => new Set(rows.filter((r) => names.includes(r.symptom)).map((r) => r.d)).size;
-    const w = symptomWeather({ poorSleepNights: days(['poor_sleep', 'night_waking']), hotFlashDays: days(['hot_flash', 'night_sweats']), stressTriggerDays: new Set(rows.filter((r) => r.trigger === 'stress').map((r) => r.d)).size, windowDays: 7 }, b.data);
+    const w = await weatherFor(db, userId, now(), c.weather, b.data);
     let shared = false;
     if (b.data.share) {
       if (!(await c.hasConsent(userId, 'family_signals'))) return reply.code(403).send({ error: 'consent_required', purpose: 'family_signals' });

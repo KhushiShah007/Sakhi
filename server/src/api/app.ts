@@ -10,11 +10,13 @@ import { TIMES, TRIGGERS } from '../safety/validate.js';
 import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
+import { registerHome } from './home.js';
+import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
-export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger }
+export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider }
 interface Auth { userId: string; csrf: string }
 declare module 'fastify' { interface FastifyRequest { auth?: Auth } }
 
@@ -26,7 +28,7 @@ const safeEq = (a: string, b: string) => a.length === b.length && timingSafeEqua
 const phoneSchema = z.string().transform((s) => s.replace(/[\s-]/g, '')).pipe(z.string().regex(/^\+?\d{10,13}$/));
 const langSchema = z.enum(LANGS as [Lang, ...Lang[]]);
 
-export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env), weather = weatherFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
   assertSafeBoot(env);
   const key = keyFromEnv(env);
   const prod = env.NODE_ENV === 'production';
@@ -275,7 +277,9 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     return { deleted: true };
   });
 
-  registerFamily(app, { db, key, env, now, messenger, audit, guarded, bad, hasConsent, limited });
+  const ctx = { db, key, env, now, messenger, weather, audit, guarded, bad, hasConsent, limited };
+  registerFamily(app, ctx);
+  registerHome(app, ctx);
 
   return app;
 }
