@@ -512,7 +512,7 @@ export const S = {
   pv_pin_wrong: { en: 'That PIN is not right.', hi: 'यह PIN सही नहीं है।', mr: 'हा PIN बरोबर नाही.', gu: 'આ PIN સાચો નથી.' },
   pv_pin_locked: { en: 'Too many tries. Please try again in a few minutes.', hi: 'बहुत बार कोशिश हुई। कुछ मिनट बाद फिर करें।', mr: 'खूप वेळा प्रयत्न झाले. काही मिनिटांनी पुन्हा करा.', gu: 'ઘણી વાર પ્રયત્ન થયા. થોડી મિનિટ પછી ફરી કરો.' },
   lk_title: { en: 'Enter your PIN', hi: 'PIN डालें', mr: 'PIN टाका', gu: 'PIN નાખો' },
-  lk_sub: { en: 'This phone is shared. Sakhi is locked.', hi: 'यह फ़ोन साझा है। सखी लॉक है।', mr: 'हा फोन शेअर केलेला आहे. सखी लॉक आहे.', gu: 'આ ફોન શેર કરેલો છે. સખી લૉક છે.' },
+  lk_sub: { en: 'This app is locked.', hi: 'यह ऐप लॉक है।', mr: 'हे ॲप लॉक आहे.', gu: 'આ ઍપ લૉક છે.' },
   lk_enter: { en: 'Unlock', hi: 'अनलॉक करें', mr: 'अनलॉक करा', gu: 'અનલૉક કરો' },
   lk_out: { en: 'Sign out instead', hi: 'इसके बजाय साइन आउट करें', mr: 'त्याऐवजी साइन आउट करा', gu: 'તેના બદલે સાઇન આઉટ કરો' },
   me_name: { en: 'Your name', hi: 'आपका नाम', mr: 'तुमचे नाव', gu: 'તમારું નામ' },

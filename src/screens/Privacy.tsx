@@ -6,8 +6,18 @@ import { BottomNav } from '../components/Frame'
 import { Screen, Switch, useToast } from '../components/ui'
 import { family as initialFamily } from '../mock/user'
 import { HeroSwirls } from '../illustrations/art'
+import { useLive } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import PrivacyLive from './PrivacyLive'
 
+/** Live when logged in; demo/screenshots/static hosting keep the scripted version. */
 export default function Privacy() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <PrivacyLive /> : <PrivacyMock />
+}
+
+function PrivacyMock() {
   const { t, lang } = useI18n()
   const toast = useToast()
   const [people, setPeople] = useState(initialFamily)

@@ -13,7 +13,7 @@
     "test:safety": "vitest run server/test/safety.suite.test.ts",
     "typecheck:server": "tsc -p server/tsconfig.json --noEmit",
     "api": "tsx server/src/index.ts",
-    "e2e:live": "node scripts/e2e-onboarding.mjs && node scripts/e2e-vent.mjs && node scripts/e2e-home.mjs && node scripts/e2e-translator.mjs && node scripts/e2e-family.mjs",
+    "e2e:live": "node scripts/e2e-onboarding.mjs && node scripts/e2e-vent.mjs && node scripts/e2e-home.mjs && node scripts/e2e-translator.mjs && node scripts/e2e-privacy.mjs && node scripts/e2e-family.mjs",
     "build:web": "vite build",
     "start": "tsx server/src/index.ts"
   },

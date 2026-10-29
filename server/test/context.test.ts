@@ -108,3 +108,14 @@ describe('live preview', () => {
     expect(r.kind).toBe('crisis'); expect(r.llmUsed).toBe(false);
   });
 });
+
+describe('/api/session', () => {
+  it('answers 200 for anonymous visitors (no console errors), and returns her profile when signed in', async () => {
+    const anon = await app.inject({ method: 'GET', url: '/api/session' });
+    expect(anon.statusCode).toBe(200); expect(anon.json()).toEqual({ authenticated: false });
+    const s = await login('+919200000050');
+    const r = (await call(s, 'GET', '/api/session')).json();
+    expect(r.authenticated).toBe(true); expect(r.me.csrf).toBe(s.csrf);
+    expect(JSON.stringify(anon.json())).not.toContain('csrf');
+  });
+});

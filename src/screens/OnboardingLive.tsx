@@ -3,28 +3,22 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronLeft, Copy, Flower2, Mic, Scissors, Sparkles, UserRound, Waves } from 'lucide-react'
 import { LANGS, useI18n, type Lang } from '../i18n'
 import type { StrKey } from '../i18n/strings'
-import { api, ApiError, type Consents } from '../api/client'
+import { api, type Consents } from '../api/client'
 import { useSession } from '../api/session'
 import { Orb, Screen, Waveform } from '../components/ui'
+import AddPerson, { type Added } from '../components/AddPerson'
 import { useGo } from '../components/nav'
 import { Woman } from '../illustrations/Woman'
 import { matchLanguage, matchStage, type StageId } from '../voice/match'
 import { speak, useListen } from '../voice/speech'
 
+const field = 'h-14 w-full rounded-2xl border border-[#E7CBD3] bg-white/90 px-4 text-[18px] text-ink outline-none focus:border-rose focus:ring-2 focus:ring-rose/30'
 const STAGES: { id: StageId; t: StrKey; s: StrKey; icon: typeof Waves; tint: string }[] = [
   { id: 'perimenopause', t: 'stage_peri', s: 'stage_peri_s', icon: Waves, tint: '#FFDFC3' },
   { id: 'menopause', t: 'stage_meno', s: 'stage_meno_s', icon: Flower2, tint: '#FBD0D5' },
   { id: 'surgical_early', t: 'stage_surg', s: 'stage_surg_s', icon: Scissors, tint: '#E6D6F5' },
   { id: 'no_family', t: 'stage_solo', s: 'stage_solo_s', icon: UserRound, tint: '#DDF1E6' },
 ]
-const ROLES: { id: string; t: StrKey }[] = [
-  { id: 'husband', t: 'rel_husband' }, { id: 'son', t: 'role_son' }, { id: 'daughter', t: 'role_daughter' }, { id: 'teen', t: 'role_teen' },
-  { id: 'sister', t: 'role_sister' }, { id: 'friend', t: 'rel_friend' }, { id: 'asha', t: 'role_asha' }, { id: 'other', t: 'role_other' },
-]
-const field = 'h-14 w-full rounded-2xl border border-[#E7CBD3] bg-white/90 px-4 text-[18px] text-ink outline-none focus:border-rose focus:ring-2 focus:ring-rose/30'
-const chip = (on: boolean) => `min-h-[44px] rounded-full px-4 text-[15px] font-semibold transition ${on ? 'bg-rose text-white' : 'glass text-ink'}`
-
-interface Added { id: string; name: string; link: string; contentOnly: boolean }
 
 export default function OnboardingLive() {
   const { t, lang, setLang } = useI18n()
@@ -37,10 +31,6 @@ export default function OnboardingLive() {
   const [heard, setHeard] = useState<string | null>(null)
   const [canShare, setCanShare] = useState(true)
   const [added, setAdded] = useState<Added[]>([])
-  const [role, setRole] = useState('husband')
-  const [who, setWho] = useState('')
-  const [whoLang, setWhoLang] = useState<Lang>(lang)
-  const [phone, setPhone] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(false)
@@ -68,18 +58,6 @@ export default function OnboardingLive() {
       if (step === 2) { const s = matchStage(said); if (s) { setStage(s); setHeard(t(STAGES.find((x) => x.id === s)!.t)) } }
       listener.reset()
     } else { setHeard(null); listener.reset(); listener.start() }
-  }
-
-  const addPerson = async () => {
-    if (!who.trim()) return
-    setBusy(true); setErr(false)
-    try {
-      const r = await api<{ id: string; link: string; contentOnly: boolean }>('POST', '/api/people', {
-        name: who.trim(), herLabel: name.trim() || who.trim(), role, lang: whoLang, ...(phone.trim() && role !== 'teen' ? { phone: phone.replace(/[\s-]/g, '').replace(/^(\d{10})$/, '+91$1') } : {}),
-      })
-      setAdded((a) => [...a, { id: r.id, name: who.trim(), link: r.link, contentOnly: r.contentOnly }])
-      setWho(''); setPhone('')
-    } catch (e) { setErr(!(e instanceof ApiError) || e.status !== 403 ? true : false); if (e instanceof ApiError && e.status === 403) setCanShare(false) } finally { setBusy(false) }
   }
 
   const copy = async (a: Added) => {
@@ -191,21 +169,7 @@ export default function OnboardingLive() {
                   <button onClick={() => void copy(a)} className="btn-ghost mt-2 min-h-[44px] w-full">{copied === a.id ? <><Check size={17} /> {t('ob_who_copied')}</> : <><Copy size={17} /> {t('ob_who_copy')}</>}</button>
                 </div>
               ))}
-              {canShare && (
-                <div className="glass flex flex-col gap-3 rounded-2xl p-3.5">
-                  <div className="flex flex-wrap gap-2">
-                    {ROLES.map((r) => <button key={r.id} aria-pressed={role === r.id} onClick={() => setRole(r.id)} className={chip(role === r.id)}>{t(r.t)}</button>)}
-                  </div>
-                  {role === 'teen' && <p className="text-[13.5px] text-ink-soft">{t('ob_who_teen')}</p>}
-                  <input className={field} aria-label={t('ob_who_name')} placeholder={t('ob_who_name')} value={who} maxLength={60} onChange={(e) => setWho(e.target.value)} />
-                  <div>
-                    <div className="mb-1.5 text-[14px] font-semibold">{t('ob_who_lang')}</div>
-                    <div className="flex flex-wrap gap-2">{LANGS.map((l) => <button key={l.id} aria-pressed={whoLang === l.id} onClick={() => setWhoLang(l.id as Lang)} className={chip(whoLang === l.id)}>{l.native}</button>)}</div>
-                  </div>
-                  {role !== 'teen' && <input className={field} inputMode="tel" aria-label={t('ob_who_phone')} placeholder={t('ob_who_phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />}
-                  <button onClick={() => void addPerson()} disabled={busy || !who.trim()} className="btn-primary disabled:opacity-50">{t('ob_who_add')}</button>
-                </div>
-              )}
+              {canShare && <AddPerson herLabel={name} onAdded={(a) => setAdded((x) => [...x, a])} onNoConsent={() => setCanShare(false)} />}
             </div>
           )}
           {err && <p role="alert" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t('fl_error')}</p>}

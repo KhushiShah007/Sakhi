@@ -23,7 +23,7 @@ export async function api<T = unknown>(method: string, path: string, body?: unkn
   return data as T
 }
 
-export interface Me { id: string; name: string | null; lang: 'hi' | 'mr' | 'gu' | 'en'; stage: string | null; city: string | null; discreet: boolean; onboarded: boolean; demoMode: boolean; csrf: string }
+export interface Me { id: string; name: string | null; lang: 'hi' | 'mr' | 'gu' | 'en'; stage: string | null; city: string | null; discreet: boolean; onboarded: boolean; demoMode: boolean; csrf: string; age?: number; hasPin?: boolean; locked?: boolean }
 export interface Health { ok: boolean; demoAuth: boolean; llm: string }
 export type Purpose = 'core_logging' | 'family_signals' | 'doctor_brief' | 'employer_aggregate' | 'research_atlas' | 'store_audio'
 export interface Consents { current: Record<Purpose, boolean>; history: { purpose: Purpose; granted: boolean; at: string }[] }

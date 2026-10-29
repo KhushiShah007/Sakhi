@@ -89,9 +89,12 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     reply.header('set-cookie', `${COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${prod ? '; Secure' : ''}`);
 
   /** Session + CSRF (double submit: x-csrf-token must equal the value bound to the session) on every state-changing request. */
-  async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
+  const findSession = async (req: FastifyRequest) => {
     const token = cookies(req)[COOKIE];
-    const rows = token ? await db.query<{ user_id: string; csrf: string; locked: boolean }>('SELECT user_id, csrf, locked FROM sessions WHERE token_hash=$1 AND expires_at > $2', [sha(token), now().toISOString()]) : [];
+    return token ? await db.query<{ user_id: string; csrf: string; locked: boolean }>('SELECT user_id, csrf, locked FROM sessions WHERE token_hash=$1 AND expires_at > $2', [sha(token), now().toISOString()]) : [];
+  };
+  async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
+    const rows = await findSession(req);
     if (!rows.length) return reply.code(401).send({ error: 'unauthenticated' });
     if (!['GET', 'HEAD'].includes(req.method)) {
       const sent = String(req.headers['x-csrf-token'] ?? '');
@@ -166,12 +169,20 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   });
 
   // ---------- profile ----------
-  app.get('/api/me', guarded, async (req) => {
-    const u = (await db.query<{ lang: string; birth_year: number; pin_hash: string | null } & Record<string, unknown>>('SELECT id, name, lang, stage, city, discreet, onboarded, created_at, birth_year, pin_hash FROM users WHERE id=$1', [req.auth!.userId]))[0];
+  async function buildMe(userId: string, locked: boolean, csrf: string) {
+    const u = (await db.query<{ lang: string; birth_year: number; pin_hash: string | null } & Record<string, unknown>>('SELECT id, name, lang, stage, city, discreet, onboarded, created_at, birth_year, pin_hash FROM users WHERE id=$1', [userId]))[0];
     const { birth_year, pin_hash, ...rest } = u;
     // while locked, reveal nothing about her (shared phone): just enough to draw the PIN screen
-    if (req.auth!.locked) return { locked: true, hasPin: true, lang: u.lang, discreet: true, onboarded: true, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
-    return { ...rest, age: now().getFullYear() - birth_year, hasPin: !!pin_hash, locked: false, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
+    if (locked) return { locked: true, hasPin: true, lang: u.lang, discreet: true, onboarded: true, demoMode: env.DEMO_MODE === 'true', csrf };
+    return { ...rest, age: now().getFullYear() - birth_year, hasPin: !!pin_hash, locked: false, demoMode: env.DEMO_MODE === 'true', csrf };
+  }
+  app.get('/api/me', guarded, async (req) => buildMe(req.auth!.userId, req.auth!.locked, req.auth!.csrf));
+
+  /** Same as /api/me but answers 200 {authenticated:false} when nobody is signed in, so anonymous pages (family link, login) log no errors. */
+  app.get('/api/session', async (req) => {
+    const rows = await findSession(req);
+    if (!rows.length) return { authenticated: false };
+    return { authenticated: true, me: await buildMe(rows[0].user_id, rows[0].locked, rows[0].csrf) };
   });
 
   // ---------- Discreet Mode PIN ----------

@@ -58,5 +58,7 @@ await page.screenshot({ path: 'screenshots/family-teen.png' })
 await api('DELETE', `/api/people/${raj.id}`)
 await page.goto(url); await page.getByRole('alert').waitFor()
 await page.screenshot({ path: 'screenshots/family-inactive.png' })
-console.log('console errors:', JSON.stringify(errors))
+const unexpected = errors.filter((e) => !/410/.test(e))
+console.log(unexpected.length ? 'FAIL  unexpected console errors ' + JSON.stringify(unexpected) : 'PASS  no unexpected console errors (only the intended 410 for a revoked link)')
+if (unexpected.length) process.exitCode = 1
 await browser.close()

@@ -7,8 +7,17 @@ import { useGo } from '../components/nav'
 import { Avatar } from '../illustrations/Woman'
 import { MoodBlob } from '../illustrations/Blob'
 import { history } from '../mock/user'
+import { useLive } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import { HistoryLive, MeLive } from './TabsLive'
 
 export function History() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <HistoryLive /> : <HistoryMock />
+}
+
+function HistoryMock() {
   const { t, lang } = useI18n()
   const go = useGo()
   return (
@@ -76,6 +85,12 @@ function Row({ icon: Icon, label, sub, to, tint }: { icon: typeof Moon; label: s
 }
 
 export function Me() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <MeLive /> : <MeMock />
+}
+
+function MeMock() {
   const { t, lang, setLang } = useI18n()
   const tools: [typeof Moon, StrKey, string, string][] = [
     [Smile, 't_checkin', '/checkin', '#FFDFC3'],

@@ -4,6 +4,7 @@ import { I18nProvider } from './i18n'
 import { SessionProvider, useSession } from './api/session'
 import Login, { Consent } from './screens/Login'
 import OnboardingLive from './screens/OnboardingLive'
+import { LockGate } from './screens/LockScreen'
 import { PhoneFrame } from './components/Frame'
 import Welcome from './screens/Welcome'
 import Onboarding from './screens/Onboarding'
@@ -53,6 +54,7 @@ export default function App() {
     <I18nProvider>
       <SessionProvider>
       <HashRouter>
+        <LockGate>
         <Routes>
           <Route path="/" element={phone(<Welcome />)} />
           <Route path="/login" element={phone(<Login />)} />
@@ -79,6 +81,7 @@ export default function App() {
           <Route path="/hero" element={<Hero />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </LockGate>
       </HashRouter>
       </SessionProvider>
     </I18nProvider>
