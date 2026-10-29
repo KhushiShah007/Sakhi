@@ -3,6 +3,8 @@ const API = (import.meta as unknown as { env: Record<string, string | undefined>
 
 let csrf = ''
 export const setCsrf = (v: string) => { csrf = v }
+export const getCsrf = () => csrf
+export const apiBase = () => API
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown) { super(code) }
@@ -24,6 +26,6 @@ export async function api<T = unknown>(method: string, path: string, body?: unkn
 }
 
 export interface Me { id: string; name: string | null; lang: 'hi' | 'mr' | 'gu' | 'en'; stage: string | null; city: string | null; discreet: boolean; onboarded: boolean; demoMode: boolean; csrf: string; age?: number; hasPin?: boolean; locked?: boolean }
-export interface Health { ok: boolean; demoAuth: boolean; llm: string }
+export interface Health { ok: boolean; demoAuth: boolean; llm: string; tts?: 'server' | 'browser' }
 export type Purpose = 'core_logging' | 'family_signals' | 'doctor_brief' | 'employer_aggregate' | 'research_atlas' | 'store_audio'
 export interface Consents { current: Record<Purpose, boolean>; history: { purpose: Purpose; granted: boolean; at: string }[] }

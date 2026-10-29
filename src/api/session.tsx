@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, ApiError, setCsrf, type Health, type Me } from './client'
+import { setServerTts } from '../voice/speech'
 
 /**
  * offline = no API behind this page (static hosting): screens run on built-in demo data.
@@ -23,7 +24,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      setHealth(await api<Health>('GET', '/healthz'))
+      const h = await api<Health>('GET', '/healthz')
+      setServerTts(h.tts === 'server') // natural voice from the server when a key is configured, browser voice otherwise
+      setHealth(h)
     } catch { setStatus('offline'); setMe(null); return }
     try {
       const sess = await api<{ authenticated: boolean; me?: Me & { csrf: string } }>('GET', '/api/session')

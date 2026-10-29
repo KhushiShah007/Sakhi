@@ -19,11 +19,12 @@ import { MAX_PIN_FAILS, PIN_LOCK_MS, PIN_RE, checkPin, hashPin } from '../privac
 import { registerCheckins, registerHome, registerMoments } from './home.js';
 import { registerBrief } from './brief.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
+import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
-export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider }
+export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider; tts?: TtsProvider | null }
 interface Auth { userId: string; csrf: string; locked: boolean }
 const LOCKED_OK = new Set(['GET /api/me', 'POST /api/pin/verify', 'POST /api/lock', 'POST /api/auth/logout']);
 declare module 'fastify' { interface FastifyRequest { auth?: Auth } }
@@ -36,7 +37,7 @@ const safeEq = (a: string, b: string) => a.length === b.length && timingSafeEqua
 const phoneSchema = z.string().transform((s) => s.replace(/[\s-]/g, '')).pipe(z.string().regex(/^\+?\d{10,13}$/));
 const langSchema = z.enum(LANGS as [Lang, ...Lang[]]);
 
-export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env), weather = weatherFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env), weather = weatherFromEnv(env), tts = ttsFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
   assertSafeBoot(env);
   const key = keyFromEnv(env);
   const prod = env.NODE_ENV === 'production';
@@ -113,7 +114,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     return r[0]?.granted === true;
   };
 
-  app.get('/healthz', async () => ({ ok: true, demoAuth, llm: llm?.name ?? 'rules' }));
+  app.get('/healthz', async () => ({ ok: true, demoAuth, llm: llm?.name ?? 'rules', tts: tts ? 'server' : 'browser' })); // provider kind only, never a key
 
   // ---------- auth ----------
   app.post('/api/auth/otp/request', async (req, reply) => {
@@ -335,6 +336,29 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
     }
     await audit(userId, 'system', 'translate', `card:${card}`); // metadata only
     return { kind: 'ok', card, tones, source };
+  });
+
+  /**
+   * Optional natural-voice TTS (ElevenLabs when ELEVENLABS_API_KEY is set). Without a key this answers 501 and the app speaks with
+   * the browser voice. Text is the app's own wording (cues, reflections, calm sentences), capped, policy-checked, cached, and never logged.
+   */
+  const ttsCache = new Map<string, TtsAudio>();
+  app.post('/api/tts', guarded, async (req, reply) => {
+    if (!tts) return reply.code(501).send({ error: 'tts_not_configured' });
+    const b = z.object({ text: z.string().trim().min(1).max(400), lang: langSchema }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    const userId = req.auth!.userId;
+    if (violatesOutputPolicy(b.data.text)) return reply.code(400).send({ error: 'text_not_allowed' });
+    const k = sha(`${b.data.lang}|${b.data.text}`);
+    let hit = ttsCache.get(k);
+    if (!hit) {
+      if (limited(`tts:${userId}`, 40, 60_000)) return reply.code(429).send({ error: 'rate_limited' });
+      try { hit = await tts.synth(b.data.text, b.data.lang); } catch { return reply.code(502).send({ error: 'tts_failed' }); }
+      if (ttsCache.size >= 300) ttsCache.delete(ttsCache.keys().next().value as string);
+      ttsCache.set(k, hit);
+    }
+    await audit(userId, 'system', 'tts', tts.name); // metadata only, never the text
+    return reply.header('content-type', hit.mime).header('cache-control', 'private, max-age=86400').send(hit.audio);
   });
 
   app.post('/api/logs/confirm', guarded, async (req, reply) => {

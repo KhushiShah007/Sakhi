@@ -11,3 +11,9 @@ screenshots/.video-tmp/
 
 # Pitch deck (kept local)
 *.pptx
+
+# secrets and local data: never commit
+.env
+.env.*
+!.env.example
+.data/

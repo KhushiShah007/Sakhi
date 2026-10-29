@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lang } from '../i18n'
+import { apiBase, getCsrf } from '../api/client'
+import { CALM, pickVoice, splitSentences } from './tts'
 
 /** Browser-native speech. No keys, no audio leaves the device in our code path. Typed input is always the fallback. */
 export const SPEECH_LANG: Record<Lang, string> = { hi: 'hi-IN', mr: 'mr-IN', gu: 'gu-IN', en: 'en-IN' }
@@ -15,23 +17,71 @@ const recCtor = (): RecCtor | null => {
 export const sttSupported = () => typeof window !== 'undefined' && !!recCtor()
 export const ttsSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window
 
-/** Calm, neutral synthetic voice. Never a clone: only voices the device already ships. */
-export function speak(text: string, lang: Lang, onEnd?: () => void) {
+let serverTts = false
+/** Set from /healthz: true when the server has a natural-voice provider configured (ELEVENLABS_API_KEY). */
+export const setServerTts = (on: boolean) => { serverTts = on }
+
+let token = 0            // bumping this cancels whatever is currently being said
+let audio: HTMLAudioElement | null = null
+const audioCache = new Map<string, string>() // phrase -> object URL, so a repeated breath cue costs nothing
+
+function stopAll() {
+  token++
+  if (audio) { audio.pause(); audio.src = ''; audio = null }
+  if (ttsSupported()) window.speechSynthesis.cancel()
+}
+
+/** Browser voice, tuned to be calm: slower, lower, the most natural voice the device has, with a pause between sentences. */
+function speakBrowser(text: string, lang: Lang, my: number, onEnd?: () => void) {
   if (!ttsSupported()) { onEnd?.(); return }
   const synth = window.speechSynthesis
-  synth.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = SPEECH_LANG[lang]
-  u.rate = 0.88
-  u.pitch = 1
-  const voices = synth.getVoices()
-  const v = voices.find((x) => x.lang === u.lang) ?? voices.find((x) => x.lang.startsWith(lang))
-  if (v) u.voice = v
-  u.onend = () => onEnd?.()
-  u.onerror = () => onEnd?.()
-  synth.speak(u)
+  const voice = pickVoice(synth.getVoices(), SPEECH_LANG[lang])
+  const parts = splitSentences(text)
+  const next = (i: number) => {
+    if (my !== token) return
+    if (i >= parts.length) { onEnd?.(); return }
+    const u = new SpeechSynthesisUtterance(parts[i])
+    u.lang = SPEECH_LANG[lang]; u.rate = CALM.rate; u.pitch = CALM.pitch
+    if (voice) { try { u.voice = voice } catch { /* an odd voice object must never stop the app speaking */ } }
+    const done = () => { if (my === token) window.setTimeout(() => next(i + 1), i + 1 < parts.length ? CALM.pauseMs : 0) }
+    u.onend = done; u.onerror = done
+    synth.speak(u)
+  }
+  next(0)
 }
-export const stopSpeaking = () => { if (ttsSupported()) window.speechSynthesis.cancel() }
+
+async function speakServer(text: string, lang: Lang, my: number, onEnd?: () => void) {
+  let fellBack = false // the error handler and the catch can both fire: speak the fallback once
+  const fallback = () => { if (fellBack || my !== token) return; fellBack = true; speakBrowser(text, lang, my, onEnd) }
+  try {
+    const key = `${lang}|${text}`
+    let url = audioCache.get(key)
+    if (!url) {
+      const res = await fetch(`${apiBase()}/api/tts`, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', 'x-csrf-token': getCsrf() }, body: JSON.stringify({ text, lang }) })
+      if (!res.ok) throw new Error('tts')
+      url = URL.createObjectURL(await res.blob())
+      if (audioCache.size > 60) audioCache.delete(audioCache.keys().next().value as string)
+      audioCache.set(key, url)
+    }
+    if (my !== token) return
+    const a = new Audio(url)
+    audio = a
+    a.onended = () => { if (my === token) onEnd?.() }
+    a.onerror = fallback
+    await a.play()
+  } catch {
+    fallback() // no key, offline, blocked autoplay, provider error: the browser voice still works
+  }
+}
+
+/** Calm, neutral synthetic voice. Never a clone of a real person. */
+export function speak(text: string, lang: Lang, onEnd?: () => void) {
+  stopAll()
+  const my = token
+  if (serverTts) void speakServer(text, lang, my, onEnd)
+  else speakBrowser(text, lang, my, onEnd)
+}
+export const stopSpeaking = () => stopAll()
 
 export interface Listener {
   supported: boolean

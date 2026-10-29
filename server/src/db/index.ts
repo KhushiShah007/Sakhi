@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,7 @@ export async function pgDb(url: string): Promise<Db> {
 /** Embedded Postgres (WASM). Same dialect; used for zero-install dev and tests. dataDir omitted = in-memory. */
 export async function pgliteDb(dataDir?: string): Promise<Db> {
   const { PGlite } = await import('@electric-sql/pglite');
+  if (dataDir) mkdirSync(dirname(dataDir), { recursive: true }); // PGlite will not create parent folders
   const db = dataDir ? new PGlite(dataDir) : new PGlite();
   await db.waitReady;
   return {
@@ -34,7 +35,9 @@ export async function pgliteDb(dataDir?: string): Promise<Db> {
 export async function dbFromEnv(env: NodeJS.ProcessEnv = process.env): Promise<Db> {
   if (env.DATABASE_URL) return pgDb(env.DATABASE_URL);
   if (env.NODE_ENV === 'production') throw new Error('DATABASE_URL is required in production');
-  return pgliteDb(env.PGLITE_DIR || undefined);
+  // dev default persists to disk so data survives restarts (set PGLITE_DIR=memory for a throwaway database)
+  const dir = env.PGLITE_DIR === 'memory' ? undefined : env.PGLITE_DIR || '.data/pglite';
+  return pgliteDb(dir);
 }
 
 export async function migrate(db: Db): Promise<string[]> {

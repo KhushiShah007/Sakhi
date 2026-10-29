@@ -37,3 +37,5 @@
 - **Doctor links hold a frozen encrypted snapshot**, expire in 7 days, can be revoked, and die when she withdraws `doctor_brief` consent or deletes her account. Unknown, expired and revoked links answer identically (410).
 - **Timeline covers 4 x 7 days ending today; MRS covers 30 days.** Max severity per item over the window (explainable, to be validated clinically).
 - **PDF page-count bug fixed during visual review**: the count was read after the document flushed (always 0), so the renderer always used its smallest scale. Always look at generated PDFs.
+- **Server TTS is optional and additive**: `/healthz` reports `tts: server|browser` (never a key); the client uses the server voice only when told, and any failure drops to the browser voice (once, not twice). Only the app's own wording is voiced; no third-party voice of a real person, premade voice by default. ElevenLabs processes that text: say so in PRIVACY.md and keep the key server-side.
+- **Dev database persists by default** (`.data/pglite`, gitignored; `PGLITE_DIR=memory` for a throwaway one). Production still requires `DATABASE_URL`.

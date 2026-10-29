@@ -32,6 +32,11 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] One-tap mood check-in stored per day (counts as a check-in, fills the week strip, what she said outranks it), Right Now with real voice cues per breath phase, pause, repeat, a proper ending; `node scripts/e2e-checkin.mjs`
 - [x] Dockerfile, docker-compose.yml, render.yaml, SETUP.md (all deployment files UNTESTED: no Docker/Render available here)
 
+## Calmer voice + persistence (section 8)
+- [x] Browser voice: rate 0.85, pitch 0.9, best natural voice picked per language (neural/natural/online preferred, wrong-language excluded), one sentence at a time with ~550 ms pauses; unit tests + `node scripts/e2e-voice.mjs`
+- [x] Optional ElevenLabs TTS (`/api/tts`): key only in server env/.env (gitignored), stock calm voice settings (stability 0.75, speed 0.9, sentence pauses), cached, rate-limited, policy-checked, audited by provider only; falls back to browser voice on 501/502/offline/blocked audio. NOT tried against the real ElevenLabs API (no key here): request shape is unit-tested against a fake
+- [x] Dev database now persists to `.data/pglite` (was in-memory), verified across a server restart
+
 ## Still the scripted prototype (works only on demo data, not connected to the API)
 - [ ] Letter to Myself (needs generation + monthly job), Rehearsal Room (needs scenario turns), 3 AM Mode (needs awakening log), missed-call IVR page
 - [ ] HR dashboard (k-anonymity helpers exist and are tested; no query layer or opt-in flow yet), admin console, pilot analytics, Symptom Atlas
