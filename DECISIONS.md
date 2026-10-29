@@ -16,3 +16,9 @@
 - **Crisis replies skip consent and persistence** so help is never withheld and no crisis flag exists anywhere.
 - **Audit log stores metadata only**; on account deletion its user_id is replaced by a hashed tombstone so the trail survives without identity.
 - **OTP provider** is a generic webhook (`OTP_WEBHOOK_URL`) so any SMS gateway can be plugged in; no vendor SDK baked in.
+- **Family link = bearer token in the URL** (24 random bytes, only its hash stored). Unknown, paused and revoked links return the identical 410 so state is not leaked. Rotate/revoke kill the old link immediately.
+- **Family text is never composed from her input**: cards are an enum mapped to fixed, localized sentences; `signals` has no text column. Preview and the real family page share one `familyView` function so the preview cannot drift.
+- **Teens (role `teen`) are content-only**: no phone stored, never targeted by signals, only the teen module is visible.
+- **Her phone-based WhatsApp delivery uses the approved-template route** (needed outside the 24h window); template spec is in `.env.example`/SETUP (to write).
+- **Household weather alert shares the risk LEVEL only**, for tomorrow, only with `family_signals` consent and per-person `perm_alerts`. Stress-trigger input to the score is 0 until triggers are persisted with logs (logs table currently stores symptom/severity/time only).
+- **HUI = understood / delivered cards in the month**, where understood = family replied done AND she later tapped "it helped". Failed deliveries excluded.

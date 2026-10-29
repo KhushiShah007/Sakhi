@@ -8,11 +8,12 @@ import { decrypt, encrypt, keyFromEnv } from '../privacy/crypto.js';
 import { confirmEntries, handleUtterance, type ProposedEntry } from '../safety/pipeline.js';
 import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
+import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
-export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date }
+export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger }
 interface Auth { userId: string; csrf: string }
 declare module 'fastify' { interface FastifyRequest { auth?: Auth } }
 
@@ -24,7 +25,7 @@ const safeEq = (a: string, b: string) => a.length === b.length && timingSafeEqua
 const phoneSchema = z.string().transform((s) => s.replace(/[\s-]/g, '')).pipe(z.string().regex(/^\+?\d{10,13}$/));
 const langSchema = z.enum(LANGS as [Lang, ...Lang[]]);
 
-export async function buildApp({ db, llm, env = process.env, now = () => new Date() }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp({ db, llm, env = process.env, now = () => new Date(), messenger = messengerFromEnv(env) }: AppDeps): Promise<FastifyInstance> {
   assertSafeBoot(env);
   const key = keyFromEnv(env);
   const prod = env.NODE_ENV === 'production';
@@ -62,7 +63,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   });
 
   app.addHook('onRequest', async (req, reply) => {
-    if (limited(`ip:${req.ip}`, 120, 60_000)) return reply.code(429).send({ error: 'rate_limited' });
+    if (limited(`ip:${req.ip}`, Number(env.RATE_LIMIT_PER_MIN) || 120, 60_000)) return reply.code(429).send({ error: 'rate_limited' });
   });
 
   const cookies = (req: FastifyRequest): Record<string, string> =>
@@ -251,6 +252,8 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     setCookie(reply, '', 0);
     return { deleted: true };
   });
+
+  registerFamily(app, { db, key, env, now, messenger, audit, guarded, bad, hasConsent, limited });
 
   return app;
 }
