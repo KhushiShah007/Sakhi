@@ -103,7 +103,7 @@ export default function BriefLive() {
               {b.items.map((it) => (
                 <li key={it.id} className="flex items-center justify-between gap-3 text-[14px]">
                   <span>{it.name}</span>
-                  <span className="flex shrink-0 gap-1" aria-label={`${it.score}/4`}>{[0, 1, 2, 3].map((d) => <span key={d} className={`h-2.5 w-2.5 rounded-full ${d < it.score ? 'bg-rose' : 'bg-[#F1E4E8]'}`} />)}</span>
+                  <span className="flex shrink-0 gap-1" role="img" aria-label={`${it.score}/4`}>{[0, 1, 2, 3].map((d) => <span key={d} className={`h-2.5 w-2.5 rounded-full ${d < it.score ? 'bg-rose' : 'bg-[#F1E4E8]'}`} />)}</span>
                 </li>
               ))}
             </ul>
