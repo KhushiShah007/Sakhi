@@ -4,6 +4,7 @@ import type { WeatherForecast, WeatherProvider } from '../providers/weather.js';
 import { moodForDay, type Mood } from '../safety/mood.js';
 import type { Symptom } from '../safety/mrs.js';
 import { symptomWeather, type RecentSignals, type SymptomWeather } from '../safety/weather.js';
+import { decrypt } from '../privacy/crypto.js';
 import type { Ctx } from './family.js';
 
 const IST_MS = 5.5 * 3600_000;
@@ -37,6 +38,29 @@ export async function weatherFor(db: Db, userId: string, now: Date, provider: We
     tempC: override?.tempC ?? forecast?.tempC, humidityPct: override?.humidityPct ?? forecast?.humidityPct, aqi: override?.aqi ?? forecast?.aqi ?? undefined,
   });
   return { ...w, tomorrow: forecast, city: city ?? null };
+}
+
+export function registerMoments(app: FastifyInstance, c: Ctx) {
+  const { db, now, key } = c;
+  /** Letters & Moments history: one line per day she spoke (symptoms only, never her words) and every signal she sent. */
+  app.get('/api/moments', c.guarded, async (req) => {
+    const userId = req.auth!.userId;
+    const rows = await loadRecentLogs(db, userId, now(), 14);
+    const byDay = new Map<string, LogRow[]>();
+    for (const r of rows) { const d = istDay(new Date(r.at)); byDay.set(d, [...(byDay.get(d) ?? []), r]); }
+    const vents = [...byDay.entries()].map(([day, rs]) => {
+      const m = moodForDay(rs.map((r) => ({ symptom: r.symptom, severity: r.severity })));
+      const top = [...rs].sort((a, b) => b.severity - a.severity).map((r) => r.symptom).filter((s, i, a) => a.indexOf(s) === i).slice(0, 3);
+      return { kind: 'vent' as const, at: new Date(rs[rs.length - 1].at).toISOString(), day, mood: m.mood, symptoms: top };
+    });
+    const sigs = await db.query<{ id: string; card_type: string; sent_at: string; done_at: string | null; needs_help_at: string | null; helped_at: string | null; delivery_status: string; person_id: string; name_enc: string }>(
+      'SELECT s.id, s.card_type, s.sent_at, s.done_at, s.needs_help_at, s.helped_at, s.delivery_status, s.person_id, p.name_enc FROM signals s JOIN people p ON p.id = s.person_id WHERE s.user_id=$1 ORDER BY s.sent_at DESC LIMIT 20', [userId]);
+    const signals = sigs.map((s) => ({
+      kind: 'signal' as const, id: s.id, at: new Date(s.sent_at).toISOString(), card: s.card_type, person: decrypt(s.name_enc, key, `person:${s.person_id}:name`),
+      status: s.done_at ? 'done' : s.needs_help_at ? 'needs_help' : 'new', helped: !!s.helped_at, delivery: s.delivery_status,
+    }));
+    return { items: [...vents, ...signals].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 30) };
+  });
 }
 
 export function registerHome(app: FastifyInstance, c: Ctx & { weather: WeatherProvider }) {

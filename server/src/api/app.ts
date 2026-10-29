@@ -15,14 +15,16 @@ import { SYSTEM_PROMPT, models } from '../llm/provider.js';
 import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
-import { registerHome } from './home.js';
+import { MAX_PIN_FAILS, PIN_LOCK_MS, PIN_RE, checkPin, hashPin } from '../privacy/pin.js';
+import { registerHome, registerMoments } from './home.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
 type Purpose = (typeof PURPOSES)[number];
 
 export interface AppDeps { db: Db; llm: LlmProvider | null; env?: NodeJS.ProcessEnv; now?: () => Date; messenger?: Messenger; weather?: WeatherProvider }
-interface Auth { userId: string; csrf: string }
+interface Auth { userId: string; csrf: string; locked: boolean }
+const LOCKED_OK = new Set(['GET /api/me', 'POST /api/pin/verify', 'POST /api/lock', 'POST /api/auth/logout']);
 declare module 'fastify' { interface FastifyRequest { auth?: Auth } }
 
 const COOKIE = 'sakhi_session';
@@ -89,13 +91,15 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   /** Session + CSRF (double submit: x-csrf-token must equal the value bound to the session) on every state-changing request. */
   async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     const token = cookies(req)[COOKIE];
-    const rows = token ? await db.query<{ user_id: string; csrf: string }>('SELECT user_id, csrf FROM sessions WHERE token_hash=$1 AND expires_at > $2', [sha(token), now().toISOString()]) : [];
+    const rows = token ? await db.query<{ user_id: string; csrf: string; locked: boolean }>('SELECT user_id, csrf, locked FROM sessions WHERE token_hash=$1 AND expires_at > $2', [sha(token), now().toISOString()]) : [];
     if (!rows.length) return reply.code(401).send({ error: 'unauthenticated' });
     if (!['GET', 'HEAD'].includes(req.method)) {
       const sent = String(req.headers['x-csrf-token'] ?? '');
       if (!safeEq(sent, rows[0].csrf)) return reply.code(403).send({ error: 'csrf' });
     }
-    req.auth = { userId: rows[0].user_id, csrf: rows[0].csrf };
+    // Discreet Mode: a locked session can do nothing except ask who it is, enter the PIN, lock again, or sign out.
+    if (rows[0].locked && !LOCKED_OK.has(`${req.method} ${req.routeOptions.url ?? ''}`)) return reply.code(423).send({ error: 'locked' });
+    req.auth = { userId: rows[0].user_id, csrf: rows[0].csrf, locked: rows[0].locked };
   }
   const guarded = { preHandler: requireAuth };
   const bad = (reply: FastifyReply, e: unknown) => reply.code(400).send({ error: 'invalid_input', issues: e instanceof z.ZodError ? e.issues.map((i) => i.path.join('.')) : undefined });
@@ -163,8 +167,70 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
 
   // ---------- profile ----------
   app.get('/api/me', guarded, async (req) => {
-    const u = (await db.query('SELECT id, name, lang, stage, city, discreet, onboarded, created_at FROM users WHERE id=$1', [req.auth!.userId]))[0];
-    return { ...u, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
+    const u = (await db.query<{ lang: string; birth_year: number; pin_hash: string | null } & Record<string, unknown>>('SELECT id, name, lang, stage, city, discreet, onboarded, created_at, birth_year, pin_hash FROM users WHERE id=$1', [req.auth!.userId]))[0];
+    const { birth_year, pin_hash, ...rest } = u;
+    // while locked, reveal nothing about her (shared phone): just enough to draw the PIN screen
+    if (req.auth!.locked) return { locked: true, hasPin: true, lang: u.lang, discreet: true, onboarded: true, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
+    return { ...rest, age: now().getFullYear() - birth_year, hasPin: !!pin_hash, locked: false, demoMode: env.DEMO_MODE === 'true', csrf: req.auth!.csrf };
+  });
+
+  // ---------- Discreet Mode PIN ----------
+  const sessionToken = (req: FastifyRequest) => sha(cookies(req)[COOKIE] ?? '');
+  const pinRow = async (userId: string) => (await db.query<{ pin_hash: string | null; pin_fails: number; pin_locked_until: string | null }>('SELECT pin_hash, pin_fails, pin_locked_until FROM users WHERE id=$1', [userId]))[0];
+  /** Shared by verify/change/remove: wrong PINs count, and 5 misses lock PIN entry for 5 minutes. */
+  async function tryPin(userId: string, pin: string): Promise<{ ok: true } | { ok: false; status: number; body: Record<string, unknown> }> {
+    const u = await pinRow(userId);
+    if (!u.pin_hash) return { ok: false, status: 400, body: { error: 'no_pin' } };
+    if (u.pin_locked_until && new Date(u.pin_locked_until) > now()) return { ok: false, status: 429, body: { error: 'pin_locked', retryAt: new Date(u.pin_locked_until).toISOString() } };
+    if (checkPin(pin, u.pin_hash)) { await db.query('UPDATE users SET pin_fails=0, pin_locked_until=NULL WHERE id=$1', [userId]); return { ok: true }; }
+    const fails = u.pin_fails + 1;
+    if (fails >= MAX_PIN_FAILS) {
+      await db.query('UPDATE users SET pin_fails=0, pin_locked_until=$2 WHERE id=$1', [userId, new Date(now().getTime() + PIN_LOCK_MS).toISOString()]);
+      await audit(userId, 'system', 'pin_locked_out', 'pin');
+      return { ok: false, status: 429, body: { error: 'pin_locked', retryAt: new Date(now().getTime() + PIN_LOCK_MS).toISOString() } };
+    }
+    await db.query('UPDATE users SET pin_fails=$2 WHERE id=$1', [userId, fails]);
+    return { ok: false, status: 401, body: { error: 'wrong_pin', attemptsLeft: MAX_PIN_FAILS - fails } };
+  }
+
+  app.post('/api/pin', guarded, async (req, reply) => {
+    const b = z.object({ pin: z.string().regex(PIN_RE), currentPin: z.string().regex(PIN_RE).optional() }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    const userId = req.auth!.userId;
+    if ((await pinRow(userId)).pin_hash) { // changing an existing PIN needs the current one
+      const r = await tryPin(userId, b.data.currentPin ?? '');
+      if (!r.ok) return reply.code(r.status).send(r.body);
+    }
+    await db.query('UPDATE users SET pin_hash=$2, pin_fails=0, pin_locked_until=NULL, discreet=TRUE WHERE id=$1', [userId, hashPin(b.data.pin)]);
+    await audit(userId, 'user', 'pin_set', 'pin');
+    return { ok: true };
+  });
+
+  app.delete('/api/pin', guarded, async (req, reply) => {
+    const b = z.object({ pin: z.string().regex(PIN_RE) }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    const r = await tryPin(req.auth!.userId, b.data.pin);
+    if (!r.ok) return reply.code(r.status).send(r.body);
+    await db.query('UPDATE users SET pin_hash=NULL, pin_fails=0, pin_locked_until=NULL WHERE id=$1', [req.auth!.userId]);
+    await db.query('UPDATE sessions SET locked=FALSE WHERE user_id=$1', [req.auth!.userId]); // no PIN means nothing left to unlock with
+    await audit(req.auth!.userId, 'user', 'pin_removed', 'pin');
+    return { ok: true };
+  });
+
+  app.post('/api/pin/verify', guarded, async (req, reply) => {
+    const b = z.object({ pin: z.string().regex(PIN_RE) }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    const r = await tryPin(req.auth!.userId, b.data.pin);
+    if (!r.ok) return reply.code(r.status).send(r.body);
+    await db.query('UPDATE sessions SET locked=FALSE WHERE token_hash=$1', [sessionToken(req)]);
+    return { ok: true };
+  });
+
+  /** Lock this session now (page reopened, or idle). Only meaningful when a PIN exists. */
+  app.post('/api/lock', guarded, async (req, reply) => {
+    if (!(await pinRow(req.auth!.userId)).pin_hash) return reply.code(400).send({ error: 'no_pin' });
+    await db.query('UPDATE sessions SET locked=TRUE WHERE token_hash=$1', [sessionToken(req)]);
+    return { locked: true };
   });
 
   app.patch('/api/me', guarded, async (req, reply) => {
@@ -320,6 +386,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   const ctx = { db, key, env, now, messenger, weather, audit, guarded, bad, hasConsent, limited };
   registerFamily(app, ctx);
   registerHome(app, ctx);
+  registerMoments(app, ctx);
 
   return app;
 }

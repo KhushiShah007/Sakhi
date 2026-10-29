@@ -107,7 +107,10 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
 
   app.get('/api/people', c.guarded, async (req) => {
     const rows = await db.query<PersonRow & { name_enc: string }>('SELECT *, name_enc FROM people WHERE user_id=$1 AND revoked_at IS NULL ORDER BY created_at', [req.auth!.userId]);
-    return { people: rows.map((r) => ({ id: r.id, name: decrypt(r.name_enc, key, `person:${r.id}:name`), role: r.role, lang: r.lang, contentOnly: r.content_only, paused: r.paused, permissions: { signals: r.perm_signals, alerts: r.perm_alerts, coaching: r.perm_coaching } })) };
+    const last = await db.query<{ person_id: string; card_type: string; sent_at: string; done_at: string | null; needs_help_at: string | null }>(
+      'SELECT DISTINCT ON (person_id) person_id, card_type, sent_at, done_at, needs_help_at FROM signals WHERE user_id=$1 ORDER BY person_id, sent_at DESC', [req.auth!.userId]);
+    const lastBy = new Map(last.map((l) => [l.person_id, { type: l.card_type, sentAt: new Date(l.sent_at).toISOString(), status: l.done_at ? 'done' : l.needs_help_at ? 'needs_help' : 'new' }]));
+    return { people: rows.map((r) => ({ id: r.id, name: decrypt(r.name_enc, key, `person:${r.id}:name`), role: r.role, lang: r.lang, contentOnly: r.content_only, paused: r.paused, permissions: { signals: r.perm_signals, alerts: r.perm_alerts, coaching: r.perm_coaching }, lastSignal: lastBy.get(r.id) ?? null })) };
   });
 
   app.patch('/api/people/:id', c.guarded, async (req, reply) => {
