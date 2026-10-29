@@ -31,6 +31,7 @@ jobs:
         env: { DEMO_AUTH: 'true', ADMIN_KEY: admin-demo-key, RATE_LIMIT_PER_MIN: '100000', PGLITE_DIR: .data/ci }
         run: |
           npx tsx server/src/seed.ts
+          eval "$(node -e "const k=require('web-push').generateVAPIDKeys();console.log('export VAPID_PUBLIC_KEY='+k.publicKey+' VAPID_PRIVATE_KEY='+k.privateKey)")"
           (npx tsx server/src/index.ts > server.log 2>&1 &)
           for i in $(seq 1 40); do curl -sf localhost:8787/healthz && break; sleep 1; done
       - run: npm run e2e:live
