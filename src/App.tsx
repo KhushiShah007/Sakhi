@@ -24,6 +24,7 @@ import FamilyChat from './family/FamilyChat'
 import Lesson from './family/Lesson'
 import FamilyLink from './family/FamilyLink'
 import HRDashboard from './hr/HRDashboard'
+import AdminConsole from './hr/AdminConsole'
 import Demo from './demo/Demo'
 import Hero from './demo/Hero'
 
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/family/lesson" element={phone(<Lesson />)} />
           <Route path="/f/:token" element={<FamilyLink />} />
           <Route path="/hr" element={<HRDashboard />} />
+          <Route path="/admin" element={<AdminConsole />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/hero" element={<Hero />} />
           <Route path="*" element={<Navigate to="/" replace />} />

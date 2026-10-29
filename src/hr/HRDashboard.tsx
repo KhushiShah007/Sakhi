@@ -3,6 +3,9 @@ import { BookOpen, CalendarDays, Download, EyeOff, LayoutDashboard, LineChart, L
 import { ToastProvider, useToast } from '../components/ui'
 import { useGo } from '../components/nav'
 import { hr } from '../mock/clinical'
+import { useSession } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import HRLive from './HRLive'
 
 const pct = Math.round((hr.participating / hr.eligible) * 100)
 const tooltipStyle = { borderRadius: 14, border: 'none', boxShadow: '0 8px 24px rgba(59,31,43,.12)', fontFamily: 'Poppins', fontSize: 13 }
@@ -184,7 +187,15 @@ function Body() {
   )
 }
 
+/** With a backend: the real, k-anonymised dashboard (HR logs in with an access code). Static hosting, demo and screenshots keep the scripted one. */
 export default function HRDashboard() {
+  const { status } = useSession()
+  const embedded = useEmbedded()
+  if (status === 'loading') return null
+  return status === 'offline' || embedded ? <HRMock /> : <HRLive />
+}
+
+function HRMock() {
   return (
     <ToastProvider fixed>
       <Body />

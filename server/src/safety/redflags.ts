@@ -66,7 +66,7 @@ export function detectRedFlags(text: string): RedFlagHit[] {
 const L = (hi: string, mr: string, gu: string, en: string): Record<Lang, string> => ({ hi, mr, gu, en });
 
 /** Pre-written crisis responses. Pending clinician review (see SAFETY.md). */
-const SCRIPTS: Record<RedFlag, Record<Lang, string>> = {
+export const SCRIPTS: Record<RedFlag, Record<Lang, string>> = {
   self_harm: L(
     'आप जो महसूस कर रही हैं, वो बहुत भारी है, और आप अकेली नहीं हैं। कृपया अभी किसी अपने से बात करें या मदद की लाइन पर कॉल करें। आपकी सुरक्षा सबसे ज़रूरी है।',
     'तुम्ही जे अनुभवत आहात ते खूप जड आहे आणि तुम्ही एकट्या नाही आहात. कृपया आत्ता कोणा जवळच्या व्यक्तीशी बोला किंवा मदत लाइनला फोन करा. तुमची सुरक्षितता सर्वात महत्त्वाची आहे.',

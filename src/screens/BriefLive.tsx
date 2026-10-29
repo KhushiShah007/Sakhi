@@ -36,6 +36,7 @@ export default function BriefLive() {
   const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [seen, setSeen] = useState(false)
   const apiLang: Lang = view === 'doctor' ? 'en' : lang
 
   const load = useCallback(async () => {
@@ -173,6 +174,7 @@ export default function BriefLive() {
               <div key={s.id} className="mt-2 flex items-center justify-between gap-2 text-[14px]"><span>{new Date(s.createdAt).toLocaleDateString(`${lang}-IN`)} → {new Date(s.expiresAt).toLocaleDateString(`${lang}-IN`)}</span><button onClick={() => void stop(s.id)} className="min-h-[44px] rounded-full px-3 font-semibold text-rose-pressed">{t('bl_stop')}</button></div>
             ))}
           </div>
+          <button onClick={() => { void api('POST', '/api/me/consultation').then(() => setSeen(true)) }} disabled={seen} className="btn-ghost bg-white disabled:opacity-70">{seen ? t('bl_seen_done') : t('bl_seen')}</button>
           <p className="px-1 text-[13px] leading-snug text-ink-soft">{t('bl_pending')}</p>
         </div>
       </div>

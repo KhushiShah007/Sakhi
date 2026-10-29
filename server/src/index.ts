@@ -4,9 +4,11 @@ import { buildApp } from './api/app.js';
 import { serveStatic } from './api/static.js';
 import { generateDueLetters } from './api/letters.js';
 import { keyFromEnv } from './privacy/crypto.js';
+import { syncContent } from './api/admin.js';
 
 const db = await dbFromEnv();
 const applied = await migrate(db);
+await syncContent(db); // registers the app's own wording in the clinician-review register (version 1, NOT reviewed)
 const app = await buildApp({ db, llm: llmFromEnv() }); // throws if NODE_ENV=production and DEMO_AUTH=true
 // Monthly letters: idempotent, so an hourly tick means the first run after midnight on the 1st does the work (and a restart catches up).
 const jobKey = keyFromEnv();

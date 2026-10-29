@@ -13,9 +13,10 @@
     "test:safety": "vitest run server/test/safety.suite.test.ts",
     "typecheck:server": "tsc -p server/tsconfig.json --noEmit",
     "api": "tsx server/src/index.ts",
-    "e2e:live": "node scripts/e2e-onboarding.mjs && node scripts/e2e-vent.mjs && node scripts/e2e-home.mjs && node scripts/e2e-checkin.mjs && node scripts/e2e-translator.mjs && node scripts/e2e-privacy.mjs && node scripts/e2e-brief.mjs && node scripts/e2e-family.mjs",
+    "e2e:live": "node scripts/e2e-onboarding.mjs && node scripts/e2e-vent.mjs && node scripts/e2e-home.mjs && node scripts/e2e-checkin.mjs && node scripts/e2e-voice.mjs && node scripts/e2e-translator.mjs && node scripts/e2e-privacy.mjs && node scripts/e2e-brief.mjs && node scripts/e2e-tools.mjs && node scripts/e2e-family.mjs && node scripts/e2e-hr.mjs && node scripts/e2e-admin.mjs",
     "build:web": "vite build",
-    "start": "tsx server/src/index.ts"
+    "start": "tsx server/src/index.ts",
+    "seed": "tsx server/src/seed.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.13",

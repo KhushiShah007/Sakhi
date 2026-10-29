@@ -582,6 +582,20 @@ export const S = {
   rh_tip_no_blame: { en: 'Swap "you always / you never" for what you need.', hi: '"तुम हमेशा / कभी नहीं" की जगह बताइए कि आपको क्या चाहिए।', mr: '"तू नेहमी / कधीच नाही" ऐवजी तुम्हाला काय हवे ते सांगा.', gu: '"તમે હંમેશા / ક્યારેય નહીં" ને બદલે તમને શું જોઈએ તે કહો.' },
   rh_tip_calm: { en: 'Slow down. Shorter sentences and fewer exclamation marks land more softly.', hi: 'धीमे चलिए। छोटे वाक्य और कम विस्मयादिबोधक चिह्न नरमी से पहुँचते हैं।', mr: 'हळू चला. लहान वाक्ये आणि कमी उद्गारचिन्हे मृदूपणे पोहोचतात.', gu: 'ધીમા ચાલો. ટૂંકાં વાક્યો અને ઓછા ઉદ્ગારચિહ્નો નરમાઈથી પહોંચે છે.' },
   rh_tip_great: { en: 'That was clear and kind. You can say it like this.', hi: 'यह साफ़ और नरम था। आप इसी तरह कह सकती हैं।', mr: 'हे स्पष्ट आणि मृदू होते. तुम्ही असेच म्हणू शकता.', gu: 'આ સ્પષ્ટ અને નરમ હતું. તમે આ રીતે કહી શકો.' },
+
+  // ---- workplace opt-in
+  wp_title: { en: 'Workplace (optional)', hi: 'कार्यस्थल (वैकल्पिक)', mr: 'कामाचे ठिकाण (ऐच्छिक)', gu: 'કાર્યસ્થળ (વૈકલ્પિક)' },
+  wp_sub: { en: 'Join your employer\'s programme anonymously. They only ever see group totals of 10 or more people, never you.', hi: 'अपने नियोक्ता के कार्यक्रम से गुमनाम रूप से जुड़ें। वे सिर्फ़ 10 या ज़्यादा लोगों के समूह के कुल आँकड़े देखते हैं, आपको कभी नहीं।', mr: 'तुमच्या नियोक्त्याच्या कार्यक्रमात अनामिकपणे सामील व्हा. ते फक्त 10 किंवा जास्त लोकांच्या गटाचे एकूण आकडे पाहतात, तुम्हाला कधीच नाही.', gu: 'તમારા નોકરીદાતાના કાર્યક્રમમાં અનામી રીતે જોડાઓ. તેઓ ફક્ત 10 કે વધુ લોકોના જૂથના કુલ આંકડા જુએ છે, તમને ક્યારેય નહીં.' },
+  wp_code: { en: 'Employer code', hi: 'नियोक्ता कोड', mr: 'नियोक्ता कोड', gu: 'નોકરીદાતા કોડ' },
+  wp_find: { en: 'Find', hi: 'खोजें', mr: 'शोधा', gu: 'શોધો' },
+  wp_pick: { en: 'Your location', hi: 'आपका स्थान', mr: 'तुमचे ठिकाण', gu: 'તમારું સ્થળ' },
+  wp_join: { en: 'Join anonymously', hi: 'गुमनाम रूप से जुड़ें', mr: 'अनामिकपणे सामील व्हा', gu: 'અનામી રીતે જોડાઓ' },
+  wp_member: { en: 'You are counted in {name} totals ({loc}).', hi: 'आप {name} के कुल आँकड़ों में गिनी जाती हैं ({loc})।', mr: 'तुम्ही {name} च्या एकूण आकड्यांत मोजल्या जाता ({loc}).', gu: 'તમે {name} ના કુલ આંકડામાં ગણાઓ છો ({loc}).' },
+  wp_leave: { en: 'Leave the programme', hi: 'कार्यक्रम छोड़ें', mr: 'कार्यक्रम सोडा', gu: 'કાર્યક્રમ છોડો' },
+  wp_need_consent: { en: 'First turn on "Count me in anonymous workplace totals" above.', hi: 'पहले ऊपर "अनाम कार्यस्थल आँकड़ों में मुझे गिनें" चालू करें।', mr: 'आधी वर वरील "अनामिक कामाच्या ठिकाणच्या आकड्यांत मला मोजा" चालू करा.', gu: 'પહેલા ઉપર "અનામી કાર્યસ્થળ આંકડામાં મને ગણો" ચાલુ કરો.' },
+  wp_not_found: { en: 'We could not find that code.', hi: 'यह कोड नहीं मिला।', mr: 'हा कोड सापडला नाही.', gu: 'આ કોડ મળ્યો નથી.' },
+  bl_seen: { en: 'I have seen my doctor', hi: 'मैं डॉक्टर से मिल चुकी हूँ', mr: 'मी डॉक्टरांना भेटले', gu: 'હું ડૉક્ટરને મળી ચૂકી છું' },
+  bl_seen_done: { en: 'Noted. Thank you.', hi: 'दर्ज कर लिया। धन्यवाद।', mr: 'नोंदवले. धन्यवाद.', gu: 'નોંધ્યું. આભાર.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

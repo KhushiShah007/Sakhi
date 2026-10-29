@@ -20,6 +20,8 @@ import { registerCheckins, registerHome, registerMoments } from './home.js';
 import { registerBrief } from './brief.js';
 import { registerLetters } from './letters.js';
 import { registerNight } from './night.js';
+import { registerHr } from './hr.js';
+import { registerAdmin } from './admin.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
@@ -416,6 +418,8 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerBrief(app, ctx);
   registerLetters(app, ctx);
   registerNight(app, ctx);
+  registerHr(app, ctx);
+  registerAdmin(app, ctx);
 
   return app;
 }

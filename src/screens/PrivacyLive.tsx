@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, ChevronDown, CloudSun, Download, Eye, EyeOff, GraduationCap, HeartHandshake, KeyRound, Link2, Lock, Pause, Play, Plus, Radio, ScrollText, ShieldCheck, Trash2, UserX } from 'lucide-react'
+import { ArrowRight, Briefcase, ChevronDown, CloudSun, Download, Eye, EyeOff, GraduationCap, HeartHandshake, KeyRound, Link2, Lock, Pause, Play, Plus, Radio, ScrollText, ShieldCheck, Trash2, UserX } from 'lucide-react'
 import { useI18n, type Lang } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { api, ApiError, setCsrf, type Consents, type Purpose } from '../api/client'
@@ -38,6 +38,7 @@ export default function PrivacyLive() {
   const [pin, setPin] = useState({ cur: '', next: '', open: false })
   const [pinMsg, setPinMsg] = useState<{ ok: boolean; key: StrKey } | null>(null)
   const [err, setErr] = useState(false)
+  const [wp, setWp] = useState<{ membership: { name: string; location: string } | null; code: string; found: { name: string; locations: string[] } | null; loc: string; msg: StrKey | null }>({ membership: null, code: '', found: null, loc: '', msg: null })
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +47,17 @@ export default function PrivacyLive() {
     } catch { setErr(true) }
   }, [])
   useEffect(() => { void load() }, [load])
+  useEffect(() => { void api<{ membership: { name: string; location: string } | null }>('GET', '/api/employer/membership').then((r) => setWp((w) => ({ ...w, membership: r.membership }))).catch(() => {}) }, [])
+  const findEmployer = async () => {
+    setWp((w) => ({ ...w, msg: null, found: null }))
+    try { const r = await api<{ name: string; locations: string[] }>('GET', `/api/employer/lookup?code=${encodeURIComponent(wp.code.trim())}`); setWp((w) => ({ ...w, found: r, loc: r.locations[0] ?? '' })) }
+    catch { setWp((w) => ({ ...w, msg: 'wp_not_found' })) }
+  }
+  const joinEmployer = async () => {
+    try { await api('POST', '/api/employer/join', { code: wp.code.trim(), location: wp.loc }); const m = await api<{ membership: { name: string; location: string } | null }>('GET', '/api/employer/membership'); setWp((w) => ({ ...w, membership: m.membership, found: null, code: '', msg: null })) }
+    catch (e) { setWp((w) => ({ ...w, msg: e instanceof ApiError && e.status === 403 ? 'wp_need_consent' : 'wp_not_found' })) }
+  }
+  const leaveEmployer = async () => { await api('DELETE', '/api/employer/membership'); setWp((w) => ({ ...w, membership: null })) }
 
   const showPreview = async (id: string, keep = false) => {
     if (!keep && preview?.id === id) return setPreview(null)
@@ -183,7 +195,27 @@ export default function PrivacyLive() {
           </ul>
         )}
 
-        <div className="glass mt-8 rounded-[24px] p-4">
+        <div className="glass mt-8 rounded-[24px] p-4" data-testid="workplace">
+          <div className="flex items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#DCE0F7]"><Briefcase size={20} className="text-ink" /></span><div className="min-w-0 flex-1"><div className="text-[17px] font-semibold leading-tight">{t('wp_title')}</div><div className="text-[14px] leading-snug text-ink-soft">{t('wp_sub')}</div></div></div>
+          {wp.membership ? (
+            <div className="mt-3"><p className="rounded-2xl bg-[#E3F3EA] px-4 py-3 text-[15px] font-medium text-[#24563F]">{t('wp_member', { name: wp.membership.name, loc: wp.membership.location })}</p><button onClick={() => void leaveEmployer()} className="btn-ghost mt-2 w-full">{t('wp_leave')}</button></div>
+          ) : (
+            <div className="mt-3 flex flex-col gap-2.5">
+              <div className="flex gap-2"><input className={field + ' flex-1'} aria-label={t('wp_code')} placeholder={t('wp_code')} value={wp.code} onChange={(e) => setWp((w) => ({ ...w, code: e.target.value }))} /><button onClick={() => void findEmployer()} disabled={wp.code.trim().length < 3} className="btn-ghost min-w-[88px] disabled:opacity-50">{t('wp_find')}</button></div>
+              {wp.found && (
+                <>
+                  <div className="text-[15px] font-semibold">{wp.found.name}</div>
+                  <div className="text-[14px] font-semibold">{t('wp_pick')}</div>
+                  <div className="flex flex-wrap gap-2">{wp.found.locations.map((l) => <button key={l} aria-pressed={wp.loc === l} onClick={() => setWp((w) => ({ ...w, loc: l }))} className={`min-h-[44px] rounded-full px-4 text-[14.5px] font-semibold ${wp.loc === l ? 'bg-rose text-white' : 'bg-white/70'}`}>{l}</button>)}</div>
+                  <button onClick={() => void joinEmployer()} className="btn-primary">{t('wp_join')}</button>
+                </>
+              )}
+              {wp.msg && <p role="alert" className="rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15px] font-medium text-[#8A1F42]">{t(wp.msg)}</p>}
+            </div>
+          )}
+        </div>
+
+        <div className="glass mt-4 rounded-[24px] p-4">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ink text-white"><EyeOff size={20} /></span>
             <div className="min-w-0 flex-1"><div className="text-[17px] font-semibold leading-tight">{t('discreet')}</div><div className="text-[14px] leading-snug text-ink-soft">{t('discreet_s')}</div></div>

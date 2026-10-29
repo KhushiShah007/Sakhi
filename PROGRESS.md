@@ -37,9 +37,16 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] Optional ElevenLabs TTS (`/api/tts`): key only in server env/.env (gitignored), stock calm voice settings (stability 0.75, speed 0.9, sentence pauses), cached, rate-limited, policy-checked, audited by provider only; falls back to browser voice on 501/502/offline/blocked audio. NOT tried against the real ElevenLabs API (no key here): request shape is unit-tested against a fake
 - [x] Dev database now persists to `.data/pglite` (was in-memory), verified across a server restart
 
+## Letters, 3 AM, Rehearsal, employer, admin (sections 9-10)
+- [x] Letter to Myself: monthly, strengths-based, encrypted, built from confirmed logs (never her words), 4 languages, hourly idempotent job writes last month's on the 1st, optional share page (7 days, revocable, noindex); `node scripts/e2e-tools.mjs`
+- [x] 3 AM Mode: dim, quiet, awake timer, spoken wind-down on request, her tap saves a night waking; Rehearsal Room: her own words (typed/spoken) + rule-based feedback (I-statement, clear ask, no blame, calm), crisis phrase gets the real crisis reply
+- [x] Sakhi for Workplaces: k>=10 query layer (opt-in + live consent, rounding, complementary suppression, no ids/dates/text), HR access-code login, CSV export identical to the screen, employee opt-in/leave in the Privacy centre; `node scripts/e2e-hr.mjs`
+- [x] Admin console: clinician-review register (all 23 items start "pending clinician review"; DB refuses "reviewed" without a named reviewer and date; new versions are unreviewed drafts), pilot analytics (research consent only, k>=10, targets labelled hypotheses), Symptom Atlas CSV; `node scripts/e2e-admin.mjs`
+- [x] `npm run seed`: fictional Sunita household + Navrang Textiles (308 synthetic employees, two sites too small to show)
+- [x] 317 unit/integration tests (vitest capped at 3 workers: each file boots its own embedded Postgres)
+
 ## Still the scripted prototype (works only on demo data, not connected to the API)
-- [ ] Letter to Myself (needs generation + monthly job), Rehearsal Room (needs scenario turns), 3 AM Mode (needs awakening log), missed-call IVR page
-- [ ] HR dashboard (k-anonymity helpers exist and are tested; no query layer or opt-in flow yet), admin console, pilot analytics, Symptom Atlas
+- [ ] missed-call IVR page (webhook endpoints + simulator)
 - [ ] Web Push + reminders + scheduled jobs, PWA manifest + service worker + offline queue, alternate neutral manifest
 - [ ] Seed script, `/demo` against the live API, Hindi + English screenshot run against the live app, `npm run eval:speech`
 - [ ] Server speech providers (Sarvam/Google/Whisper), server TTS, telephony webhooks

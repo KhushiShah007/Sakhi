@@ -39,3 +39,9 @@
 - **PDF page-count bug fixed during visual review**: the count was read after the document flushed (always 0), so the renderer always used its smallest scale. Always look at generated PDFs.
 - **Server TTS is optional and additive**: `/healthz` reports `tts: server|browser` (never a key); the client uses the server voice only when told, and any failure drops to the browser voice (once, not twice). Only the app's own wording is voiced; no third-party voice of a real person, premade voice by default. ElevenLabs processes that text: say so in PRIVACY.md and keep the key server-side.
 - **Dev database persists by default** (`.data/pglite`, gitignored; `PGLITE_DIR=memory` for a throwaway one). Production still requires `DATABASE_URL`.
+- **HR and admin dashboards are English-only** (staff tools). Every employee- and family-facing screen is in all four languages. A known gap against "all UI translated".
+- **HR numbers are rounded (counts down to 5, percentages to 5) in addition to k>=10**, so one person joining or leaving does not move a figure. Documented limit: a determined HR analyst watching totals across many small changes can still learn something; THREAT-MODEL.md covers it.
+- **Admin console is a review register, not a CMS**: the app serves wording from code. Editing creates an unreviewed *draft* that is not served; only engineering publishes. This keeps "clinician reviewed" truthful (a DB check refuses reviewed=true without reviewer and date).
+- **Pilot analytics count only people who consented to research**, separate from the employer opt-in (purpose limitation). Seeded numbers are synthetic and only demonstrate the mechanics.
+- **Rehearsal personas are the existing fixed scripted turns** (realistic, never abusive); feedback judges HER phrasing by rules. An LLM-driven persona was not added.
+- **Letter wording never uses "in my voice"**: the Letter reads aloud in the calm synthetic voice (no voice cloning, ever).
