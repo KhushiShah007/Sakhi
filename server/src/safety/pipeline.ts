@@ -3,7 +3,7 @@ import { extract, reflect, type LlmProvider } from '../llm/provider.js';
 import { crisisResponse, detectRedFlags, type CrisisResponse } from './redflags.js';
 import { detectViolation, policyReply, type PolicyViolation } from './policy.js';
 import { SYMPTOM_TO_MRS, type ConfirmedLog, type MrsItem, type Symptom } from './mrs.js';
-import { sanitiseOutput, type Extraction } from './validate.js';
+import { sanitiseOutput, TIMES, TRIGGERS, type Extraction, type TimeOfDay, type Trigger } from './validate.js';
 
 export interface ProposedEntry { id: string; symptom: Symptom; severity: number; time: string; trigger: string; mrsItem: MrsItem | null; status: 'proposed' }
 export interface RefusalResponse { kind: 'refusal'; violation: PolicyViolation; message: string; llmUsed: false }
@@ -36,7 +36,7 @@ function toProposals(e: Extraction): ProposedEntry[] {
   return e.symptoms.map((s, i) => ({ id: `p${i}`, symptom: s.symptom, severity: s.severity, time: s.time, trigger: s.trigger, mrsItem: SYMPTOM_TO_MRS[s.symptom], status: 'proposed' as const }));
 }
 
-export interface Confirmation { id: string; accept: boolean; severity?: number }
+export interface Confirmation { id: string; accept: boolean; severity?: number; time?: TimeOfDay; trigger?: Trigger }
 
 /**
  * The ONLY way a ConfirmedLog is created. Requires an explicit decision from her for every proposal;
@@ -49,7 +49,10 @@ export function confirmEntries(proposals: ProposedEntry[], decisions: Confirmati
     const d = byId.get(p.id);
     if (!d || !d.accept) continue;
     const severity = Math.min(4, Math.max(0, Math.round(d.severity ?? p.severity)));
-    out.push({ symptom: p.symptom, severity, at: at.toISOString() });
+    // she may correct time and trigger too; anything outside the fixed vocabulary falls back to what was proposed
+    const time = TIMES.includes(d.time as TimeOfDay) ? d.time! : p.time;
+    const trigger = TRIGGERS.includes(d.trigger as Trigger) ? d.trigger! : p.trigger;
+    out.push({ symptom: p.symptom, severity, at: at.toISOString(), time, trigger });
   }
   return out;
 }

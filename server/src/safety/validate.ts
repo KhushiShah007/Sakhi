@@ -3,14 +3,19 @@ import type { Lang } from '../config.js';
 import { SYMPTOMS } from './mrs.js';
 import { normalise } from './redflags.js';
 
+export const TIMES = ['morning', 'afternoon', 'evening', 'night', 'unspecified'] as const;
+export const TRIGGERS = ['stress', 'heat', 'food', 'sleep', 'family', 'work', 'none', 'unspecified'] as const;
+export type TimeOfDay = (typeof TIMES)[number];
+export type Trigger = (typeof TRIGGERS)[number];
+
 /** The ONLY shape the extractor may return. Anything else is rejected, never repaired. */
 export const extractionSchema = z.object({
   intent: z.enum(['vent', 'checkin', 'ask_help', 'question', 'other']),
   symptoms: z.array(z.object({
     symptom: z.enum(SYMPTOMS),
     severity: z.number().int().min(0).max(4),
-    time: z.enum(['morning', 'afternoon', 'evening', 'night', 'unspecified']).default('unspecified'),
-    trigger: z.enum(['stress', 'heat', 'food', 'sleep', 'family', 'work', 'none', 'unspecified']).default('unspecified'),
+    time: z.enum(TIMES).default('unspecified'),
+    trigger: z.enum(TRIGGERS).default('unspecified'),
   }).strict()).max(12),
 }).strict();
 export type Extraction = z.infer<typeof extractionSchema>;

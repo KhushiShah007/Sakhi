@@ -176,9 +176,9 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
     const b = z.object({ tempC: z.number().min(-20).max(60).optional(), humidityPct: z.number().min(0).max(100).optional(), aqi: z.number().min(0).max(1000).optional(), share: z.boolean().optional() }).strict().safeParse(req.body);
     if (!b.success) return c.bad(reply, b.error);
     const userId = req.auth!.userId;
-    const rows = await db.query<{ symptom: string; d: string }>("SELECT symptom, to_char(at,'YYYY-MM-DD') AS d FROM logs WHERE user_id=$1 AND at >= $2", [userId, new Date(now().getTime() - 7 * 86400_000).toISOString()]);
+    const rows = await db.query<{ symptom: string; d: string; trigger: string }>("SELECT symptom, trigger, to_char(at,'YYYY-MM-DD') AS d FROM logs WHERE user_id=$1 AND at >= $2", [userId, new Date(now().getTime() - 7 * 86400_000).toISOString()]);
     const days = (names: string[]) => new Set(rows.filter((r) => names.includes(r.symptom)).map((r) => r.d)).size;
-    const w = symptomWeather({ poorSleepNights: days(['poor_sleep', 'night_waking']), hotFlashDays: days(['hot_flash', 'night_sweats']), stressTriggerDays: 0, windowDays: 7 }, b.data);
+    const w = symptomWeather({ poorSleepNights: days(['poor_sleep', 'night_waking']), hotFlashDays: days(['hot_flash', 'night_sweats']), stressTriggerDays: new Set(rows.filter((r) => r.trigger === 'stress').map((r) => r.d)).size, windowDays: 7 }, b.data);
     let shared = false;
     if (b.data.share) {
       if (!(await c.hasConsent(userId, 'family_signals'))) return reply.code(403).send({ error: 'consent_required', purpose: 'family_signals' });
@@ -222,6 +222,7 @@ export function registerFamily(app: FastifyInstance, c: Ctx) {
 
   // ---------- WhatsApp Cloud API webhooks (own scope: raw body needed for signature check) ----------
   app.register(async (wa) => {
+    wa.removeContentTypeParser('application/json');
     wa.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
       try { (req as FastifyRequest & { rawBody?: string }).rawBody = body as string; done(null, JSON.parse(body as string)); } catch (e) { done(e as Error); }
     });

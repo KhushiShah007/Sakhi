@@ -13,7 +13,7 @@ const WA_TEXT = '#00695C'
 export type ChatUpto = 'intro' | 'signal' | 'replied' | 'weather' | 'all'
 const ORDER: ChatUpto[] = ['intro', 'signal', 'replied', 'weather', 'all']
 
-function Bubble({ children, me = false, time = '7:52', card = false }: { children: ReactNode; me?: boolean; time?: string; card?: boolean }) {
+export function Bubble({ children, me = false, time = '7:52', card = false }: { children: ReactNode; me?: boolean; time?: string; card?: boolean }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }} className={`flex ${me ? 'justify-end' : ''}`}>
       <div className={`relative max-w-[86%] rounded-2xl ${me ? 'rounded-tr-sm bg-[#DCF8C6]' : 'rounded-tl-sm bg-white'} ${card ? 'w-[86%] p-1.5' : 'px-3 py-2'} shadow-[0_1px_1px_rgba(0,0,0,0.08)]`}>

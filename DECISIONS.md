@@ -20,5 +20,9 @@
 - **Family text is never composed from her input**: cards are an enum mapped to fixed, localized sentences; `signals` has no text column. Preview and the real family page share one `familyView` function so the preview cannot drift.
 - **Teens (role `teen`) are content-only**: no phone stored, never targeted by signals, only the teen module is visible.
 - **Her phone-based WhatsApp delivery uses the approved-template route** (needed outside the 24h window); template spec is in `.env.example`/SETUP (to write).
-- **Household weather alert shares the risk LEVEL only**, for tomorrow, only with `family_signals` consent and per-person `perm_alerts`. Stress-trigger input to the score is 0 until triggers are persisted with logs (logs table currently stores symptom/severity/time only).
+- **Household weather alert shares the risk LEVEL only**, for tomorrow, only with `family_signals` consent and per-person `perm_alerts`. Stress days now come from the persisted, confirmed `trigger` on her logs (migration 004).
 - **HUI = understood / delivered cards in the month**, where understood = family replied done AND she later tapped "it helped". Failed deliveries excluded.
+- **Time of day and trigger are stored on logs** as fixed vocabularies (never free text); extracted, then confirmed or corrected by her like severity.
+- **The API serves the built web app** (same origin) so the family link, cookies and CSRF need no CORS configuration. Hash routes mean only `/` needs `index.html`.
+- **Bodyless requests with a JSON content-type are accepted** (treated as no body); malformed JSON is a 400. Browsers and fetch wrappers do this routinely.
+- **Revoked/paused links return HTTP 410**; browsers log that as a console error in dev tools, which is expected and intended.

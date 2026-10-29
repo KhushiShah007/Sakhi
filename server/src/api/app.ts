@@ -6,6 +6,7 @@ import type { Db } from '../db/index.js';
 import type { LlmProvider } from '../llm/provider.js';
 import { decrypt, encrypt, keyFromEnv } from '../privacy/crypto.js';
 import { confirmEntries, handleUtterance, type ProposedEntry } from '../safety/pipeline.js';
+import { TIMES, TRIGGERS } from '../safety/validate.js';
 import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
@@ -31,6 +32,12 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   const prod = env.NODE_ENV === 'production';
   const demoAuth = env.DEMO_AUTH === 'true';
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 }); // never log request bodies: they hold her words
+  // Clients (fetch with a JSON content-type) often send bodyless POST/DELETE: treat an empty body as "no body", reject malformed JSON.
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    if (body === '') return done(null, undefined);
+    try { done(null, JSON.parse(body as string)); } catch { done(Object.assign(new Error('invalid json'), { statusCode: 400 })); }
+  });
   const phoneHash = (p: string) => createHmac('sha256', key).update(p).digest('hex');
 
   /** Unconfirmed proposals are stored encrypted (AES-GCM, bound to owner + id), single use, 15 min TTL. Not a log entry until she confirms. */
@@ -58,7 +65,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   app.addHook('onSend', async (_req, reply) => {
     reply.header('x-content-type-options', 'nosniff').header('x-frame-options', 'DENY').header('referrer-policy', 'no-referrer')
       .header('cache-control', 'no-store').header('permissions-policy', 'camera=(), geolocation=(self), microphone=(self)')
-      .header('content-security-policy', "default-src 'self'; frame-ancestors 'none'; base-uri 'self'");
+      .header('content-security-policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com; frame-ancestors 'none'; base-uri 'self'");
     if (prod) reply.header('strict-transport-security', 'max-age=31536000; includeSubDomains');
   });
 
@@ -195,21 +202,21 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   });
 
   app.post('/api/logs/confirm', guarded, async (req, reply) => {
-    const b = z.object({ setId: z.string().uuid(), decisions: z.array(z.object({ id: z.string(), accept: z.boolean(), severity: z.number().int().min(0).max(4).optional() }).strict()).max(20) }).strict().safeParse(req.body);
+    const b = z.object({ setId: z.string().uuid(), decisions: z.array(z.object({ id: z.string(), accept: z.boolean(), severity: z.number().int().min(0).max(4).optional(), time: z.enum(TIMES).optional(), trigger: z.enum(TRIGGERS).optional() }).strict()).max(20) }).strict().safeParse(req.body);
     if (!b.success) return bad(reply, b.error);
     const userId = req.auth!.userId;
     if (!(await hasConsent(userId, 'core_logging'))) return reply.code(403).send({ error: 'consent_required', purpose: 'core_logging' });
     const proposals = await takeProposals(b.data.setId, userId); // atomic delete-returning: single use
     if (!proposals) return reply.code(404).send({ error: 'proposal_set_not_found' });
     const logs = confirmEntries(proposals, b.data.decisions, now());
-    for (const l of logs) await db.query('INSERT INTO logs(id, user_id, symptom, severity, at) VALUES ($1,$2,$3,$4,$5)', [randomUUID(), userId, l.symptom, l.severity, l.at]);
+    for (const l of logs) await db.query('INSERT INTO logs(id, user_id, symptom, severity, at, time_of_day, trigger) VALUES ($1,$2,$3,$4,$5,$6,$7)', [randomUUID(), userId, l.symptom, l.severity, l.at, l.time ?? 'unspecified', l.trigger ?? 'unspecified']);
     await audit(userId, 'user', 'confirm_logs', `count:${logs.length}`);
     return { saved: logs.length };
   });
 
   const loadLogs = async (userId: string, days: number): Promise<ConfirmedLog[]> =>
-    (await db.query<{ symptom: Symptom; severity: number; at: string }>('SELECT symptom, severity, at FROM logs WHERE user_id=$1 AND at >= $2 ORDER BY at', [userId, new Date(now().getTime() - days * 86400_000).toISOString()]))
-      .map((r) => ({ symptom: r.symptom, severity: r.severity, at: new Date(r.at).toISOString() }));
+    (await db.query<{ symptom: Symptom; severity: number; at: string; time_of_day: string; trigger: string }>('SELECT symptom, severity, at, time_of_day, trigger FROM logs WHERE user_id=$1 AND at >= $2 ORDER BY at', [userId, new Date(now().getTime() - days * 86400_000).toISOString()]))
+      .map((r) => ({ symptom: r.symptom, severity: r.severity, at: new Date(r.at).toISOString(), time: r.time_of_day, trigger: r.trigger }));
 
   app.get('/api/logs', guarded, async (req) => { await audit(req.auth!.userId, 'user', 'read', 'logs'); return { logs: await loadLogs(req.auth!.userId, 90) }; });
 
@@ -237,7 +244,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     const { phone_enc, ...profile } = user;
     return {
       exportedAt: now().toISOString(), profile: { ...profile, phone: decrypt(phone_enc, key, `phone:${userId}`) },
-      logs: await db.query('SELECT symptom, severity, at FROM logs WHERE user_id=$1 ORDER BY at', [userId]),
+      logs: await db.query('SELECT symptom, severity, at, time_of_day, trigger FROM logs WHERE user_id=$1 ORDER BY at', [userId]),
       consents: await db.query('SELECT purpose, granted, at FROM consents WHERE user_id=$1 ORDER BY id', [userId]),
       audit: await db.query('SELECT actor, action, resource, at FROM audit_log WHERE user_id=$1 ORDER BY id', [userId]),
     };

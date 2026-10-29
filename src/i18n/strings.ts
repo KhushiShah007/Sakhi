@@ -306,6 +306,23 @@ export const S = {
   ls_false: { en: 'False', hi: 'ग़लत', mr: 'खोटं', gu: 'ખોટું' },
   ls_right: { en: 'Exactly. It often starts years before periods stop.', hi: 'बिल्कुल। यह अक्सर पीरियड्स रुकने से सालों पहले शुरू होता है।', mr: 'अगदी बरोबर. पाळी थांबण्याच्या कित्येक वर्षं आधी हे सुरू होतं.', gu: 'બરાબર. માસિક બંધ થવાનાં વર્ષો પહેલાં આ શરૂ થાય છે.' },
   ls_back: { en: 'Back to chat', hi: 'चैट पर लौटें', mr: 'चॅटवर परत', gu: 'ચેટ પર પાછા' },
+
+  // ---- live family link page
+  fl_private: { en: 'You will never see her words, only small signals.', hi: 'आप उनके शब्द कभी नहीं देखेंगे, सिर्फ़ छोटे संकेत।', mr: 'तुम्ही तिचे शब्द कधीच पाहणार नाही, फक्त छोटे संकेत.', gu: 'તમે એમના શબ્દો ક્યારેય નહીં જુઓ, ફક્ત નાના સંકેત.' },
+  fl_loading: { en: 'Opening your link…', hi: 'आपका लिंक खुल रहा है…', mr: 'तुमची लिंक उघडत आहे…', gu: 'તમારી લિંક ખૂલી રહી છે…' },
+  fl_inactive_title: { en: 'This link is not active', hi: 'यह लिंक चालू नहीं है', mr: 'ही लिंक सुरू नाही', gu: 'આ લિંક ચાલુ નથી' },
+  fl_inactive_body: { en: 'The person who shared it may have paused or stopped sharing. Nothing is wrong on your side.', hi: 'जिन्होंने यह भेजा था, उन्होंने इसे रोक दिया होगा। आपकी तरफ़ कोई गड़बड़ी नहीं है।', mr: 'ज्यांनी ही पाठवली त्यांनी ती थांबवली असेल. तुमच्या बाजूने काही चूक नाही.', gu: 'જેમણે આ મોકલી હતી તેમણે તે રોકી દીધી હશે. તમારી બાજુએ કોઈ ભૂલ નથી.' },
+  fl_error: { en: 'Could not load. Check your internet and try again.', hi: 'लोड नहीं हो पाया। इंटरनेट देखकर फिर कोशिश करें।', mr: 'लोड झालं नाही. इंटरनेट तपासून पुन्हा प्रयत्न करा.', gu: 'લોડ થયું નથી. ઇન્ટરનેટ તપાસીને ફરી પ્રયત્ન કરો.' },
+  fl_retry: { en: 'Try again', hi: 'फिर कोशिश करें', mr: 'पुन्हा प्रयत्न करा', gu: 'ફરી પ્રયત્ન કરો' },
+  fl_intro: { en: '{name} added you to Sakhi. You will get small signals, never her private words.', hi: '{name} ने आपको सखी से जोड़ा है। आपको छोटे संकेत मिलेंगे, उनकी निजी बातें कभी नहीं।', mr: '{name} ने तुम्हाला सखीशी जोडले आहे. तुम्हाला छोटे संकेत मिळतील, तिच्या खासगी गोष्टी कधीच नाही.', gu: '{name}એ તમને સખી સાથે જોડ્યા છે. તમને નાના સંકેત મળશે, એમની ખાનગી વાતો ક્યારેય નહીં.' },
+  fl_intro_teen: { en: 'Hi! These short reads help you understand what {name} may be going through.', hi: 'नमस्ते! ये छोटी बातें समझने में मदद करेंगी कि {name} किस दौर से गुज़र रही हैं।', mr: 'नमस्कार! {name} कोणत्या टप्प्यातून जात असेल हे समजायला हे छोटे वाचन मदत करेल.', gu: 'નમસ્તે! {name} કયા તબક્કામાંથી પસાર થઈ રહ્યાં છે તે સમજવા આ નાનું વાંચન મદદ કરશે.' },
+  fl_signal_from: { en: 'Signal from {name}', hi: '{name} का संकेत', mr: '{name} चा संकेत', gu: '{name}નો સંકેત' },
+  fl_thanks: { en: 'Thank you. {name} will see a small 💛, nothing else.', hi: 'धन्यवाद। {name} को बस एक छोटा 💛 दिखेगा, और कुछ नहीं।', mr: 'धन्यवाद. {name} ला फक्त एक छोटे 💛 दिसेल, बाकी काही नाही.', gu: 'આભાર. {name}ને બસ એક નાનું 💛 દેખાશે, બીજું કંઈ નહીં.' },
+  fl_lessons: { en: 'Learn in 2 minutes', hi: '2 मिनट में सीखें', mr: '2 मिनिटांत शिका', gu: '2 મિનિટમાં શીખો' },
+  fl_pending: { en: 'Pending clinician review', hi: 'चिकित्सक समीक्षा बाकी', mr: 'वैद्यकीय तज्ज्ञांची समीक्षा बाकी', gu: 'ચિકિત્સક સમીક્ષા બાકી' },
+  fl_close: { en: 'Close', hi: 'बंद करें', mr: 'बंद करा', gu: 'બંધ કરો' },
+  fl_disclaimer: { en: 'Sakhi is a wellness companion, not a medical service.', hi: 'सखी एक वेलनेस साथी है, चिकित्सा सेवा नहीं।', mr: 'सखी एक वेलनेस साथी आहे, वैद्यकीय सेवा नाही.', gu: 'સખી એક વેલનેસ સાથી છે, તબીબી સેવા નથી.' },
+  fl_estimate: { en: 'Weather alert (an estimate)', hi: 'मौसम अलर्ट (अनुमान)', mr: 'हवामान सूचना (अंदाज)', gu: 'હવામાન ચેતવણી (અંદાજ)' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

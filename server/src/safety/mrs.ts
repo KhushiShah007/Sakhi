@@ -85,7 +85,7 @@ export function scoreMrs(input: MrsScores): MrsResult {
   return { items, somatic, psychological, urogenital, total, band: totalBand(total), max: { somatic: 16, psychological: 16, urogenital: 12, total: 44 } };
 }
 
-export interface ConfirmedLog { symptom: Symptom; severity: number; at: string }
+export interface ConfirmedLog { symptom: Symptom; severity: number; at: string; time?: string; trigger?: string }
 
 /** Aggregate her CONFIRMED logs into MRS item scores: per item, the highest severity in the window. */
 export function mrsFromLogs(logs: ConfirmedLog[]): MrsResult {
