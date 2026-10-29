@@ -618,6 +618,19 @@ export const S = {
   mic_none: { en: 'I did not hear anything. Tap the circle and try again, or type below.', hi: 'कुछ सुनाई नहीं दिया। गोले को दबाकर फिर कोशिश करें, या नीचे लिखें।', mr: 'काही ऐकू आले नाही. वर्तुळ दाबून पुन्हा प्रयत्न करा, किंवा खाली लिहा.', gu: 'કંઈ સંભળાયું નહીં. વર્તુળ દબાવીને ફરી પ્રયત્ન કરો, અથવા નીચે લખો.' },
   mic_net: { en: 'The speech service could not be reached. Please type below.', hi: 'बोली पहचानने की सेवा नहीं मिली। कृपया नीचे लिखें।', mr: 'बोलणे ओळखणारी सेवा मिळाली नाही. कृपया खाली लिहा.', gu: 'બોલી ઓળખતી સેવા મળી નહીં. કૃપા કરીને નીચે લખો.' },
   mic_other: { en: 'The microphone is not working here. Please type below.', hi: 'यहाँ माइक्रोफ़ोन काम नहीं कर रहा। कृपया नीचे लिखें।', mr: 'येथे मायक्रोफोन चालत नाही. कृपया खाली लिहा.', gu: 'અહીં માઇક્રોફોન ચાલતો નથી. કૃપા કરીને નીચે લખો.' },
+
+  // ---- voice settings
+  vs_title: { en: 'Voice', hi: 'आवाज़', mr: 'आवाज', gu: 'અવાજ' },
+  vs_on: { en: 'Spoken guidance', hi: 'बोलकर मार्गदर्शन', mr: 'बोलून मार्गदर्शन', gu: 'બોલીને માર્ગદર્શન' },
+  vs_on_s: { en: 'Sakhi reads breathing and answers aloud. Turn off for silence.', hi: 'सखी साँस और जवाब बोलकर सुनाती है। चुप्पी चाहिए तो बंद करें।', mr: 'सखी श्वास आणि उत्तरे बोलून ऐकवते. शांतता हवी तर बंद करा.', gu: 'સખી શ્વાસ અને જવાબ બોલીને સંભળાવે છે. શાંતિ જોઈએ તો બંધ કરો.' },
+  vs_pace: { en: 'Speed', hi: 'गति', mr: 'वेग', gu: 'ગતિ' },
+  vs_slower: { en: 'Slower', hi: 'और धीमी', mr: 'अधिक संथ', gu: 'વધુ ધીમી' },
+  vs_calm: { en: 'Calm', hi: 'शांत', mr: 'शांत', gu: 'શાંત' },
+  vs_normal: { en: 'Normal', hi: 'सामान्य', mr: 'सामान्य', gu: 'સામાન્ય' },
+  vs_voice: { en: 'Voice', hi: 'आवाज़ चुनें', mr: 'आवाज निवडा', gu: 'અવાજ પસંદ કરો' },
+  vs_auto: { en: 'Best available', hi: 'सबसे अच्छी उपलब्ध', mr: 'सर्वोत्तम उपलब्ध', gu: 'શ્રેષ્ઠ ઉપલબ્ધ' },
+  vs_preview: { en: 'Hear a sample', hi: 'नमूना सुनें', mr: 'नमुना ऐका', gu: 'નમૂનો સાંભળો' },
+  vs_sample: { en: 'Breathe in slowly. And let it go. You are doing well.', hi: 'धीरे से साँस लें। और छोड़ दें। आप ठीक कर रही हैं।', mr: 'हळूच श्वास घ्या. आणि सोडून द्या. तुम्ही छान करत आहात.', gu: 'ધીમેથી શ્વાસ લો. અને છોડી દો. તમે સરસ કરી રહ્યા છો.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

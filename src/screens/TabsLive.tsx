@@ -7,6 +7,7 @@ import { useSession } from '../api/session'
 import { BottomNav } from '../components/Frame'
 import { Screen, Stagger } from '../components/ui'
 import { useGo } from '../components/nav'
+import VoiceSettings from '../components/VoiceSettings'
 import { Avatar } from '../illustrations/Woman'
 import { MoodBlob } from '../illustrations/Blob'
 import type { Mood } from '../mock/user'
@@ -130,6 +131,9 @@ export function MeLive() {
         <div className="grid grid-cols-4 gap-2">
           {LANGS.map((l) => <button key={l.id} onClick={() => void chooseLang(l.id)} aria-pressed={lang === l.id} className={`min-h-[56px] rounded-2xl text-[15px] font-semibold transition ${lang === l.id ? 'bg-rose text-white shadow-soft' : 'glass text-ink'}`}>{l.native}</button>)}
         </div>
+
+        <h2 className="h-section mb-2 mt-6">{t('vs_title')}</h2>
+        <VoiceSettings />
 
         <h2 className="h-section mb-2 mt-6">{t('me_tools')}</h2>
         <div className="glass divide-y divide-white/80 rounded-[24px] px-3">

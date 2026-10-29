@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lang } from '../i18n'
 import { apiBase, getCsrf } from '../api/client'
 import { CALM, pickVoice, splitSentences } from './tts'
+import { PACE_RATE, getVoicePrefs } from './prefs'
 
 /** Browser-native speech. No keys, no audio leaves the device in our code path. Typed input is always the fallback. */
 export const SPEECH_LANG: Record<Lang, string> = { hi: 'hi-IN', mr: 'mr-IN', gu: 'gu-IN', en: 'en-IN' }
@@ -35,13 +36,15 @@ function stopAll() {
 function speakBrowser(text: string, lang: Lang, my: number, onEnd?: () => void) {
   if (!ttsSupported()) { onEnd?.(); return }
   const synth = window.speechSynthesis
-  const voice = pickVoice(synth.getVoices(), SPEECH_LANG[lang])
+  const prefs = getVoicePrefs()
+  const voices = synth.getVoices()
+  const voice = voices.find((v) => v.name === prefs.voice && v.lang.toLowerCase().startsWith(SPEECH_LANG[lang].slice(0, 2).toLowerCase())) ?? pickVoice(voices, SPEECH_LANG[lang])
   const parts = splitSentences(text)
   const next = (i: number) => {
     if (my !== token) return
     if (i >= parts.length) { onEnd?.(); return }
     const u = new SpeechSynthesisUtterance(parts[i])
-    u.lang = SPEECH_LANG[lang]; u.rate = CALM.rate; u.pitch = CALM.pitch; u.volume = CALM.volume
+    u.lang = SPEECH_LANG[lang]; u.rate = PACE_RATE[prefs.pace]; u.pitch = CALM.pitch; u.volume = CALM.volume
     if (voice) { try { u.voice = voice } catch { /* an odd voice object must never stop the app speaking */ } }
     const done = () => { if (my === token) window.setTimeout(() => next(i + 1), i + 1 < parts.length ? CALM.pauseMs : 0) }
     u.onend = done; u.onerror = done
@@ -78,6 +81,7 @@ async function speakServer(text: string, lang: Lang, my: number, onEnd?: () => v
 export function speak(text: string, lang: Lang, onEnd?: () => void) {
   stopAll()
   const my = token
+  if (!getVoicePrefs().on) { onEnd?.(); return }
   if (serverTts) void speakServer(text, lang, my, onEnd)
   else speakBrowser(text, lang, my, onEnd)
 }
