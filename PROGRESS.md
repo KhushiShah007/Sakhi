@@ -28,11 +28,16 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] `.env.example`
 - [x] CI: typecheck, tests, safety suite, prototype build
 
-## Not started (needs a database, Docker, accounts or substantial UI work)
-- [ ] Retention jobs
-- [ ] STT/TTS/weather/WhatsApp/IVR/push providers (interfaces + fallbacks)
-- [ ] Wiring the existing screens to the API (they still use mock data)
-- [ ] Family link pages, webhooks, HUI, HR query layer, admin console, pilot analytics
-- [ ] Brief PDF export, scheduled jobs, PWA/offline, Discreet Mode lock
-- [ ] Seed, Playwright e2e, Lighthouse, Docker, render.yaml, remaining docs
-- [ ] GitHub release v1.0.0 (not tagged: the app is not complete)
+## Check-in + Right Now (section 7)
+- [x] One-tap mood check-in stored per day (counts as a check-in, fills the week strip, what she said outranks it), Right Now with real voice cues per breath phase, pause, repeat, a proper ending; `node scripts/e2e-checkin.mjs`
+- [x] Dockerfile, docker-compose.yml, render.yaml, SETUP.md (all deployment files UNTESTED: no Docker/Render available here)
+
+## Still the scripted prototype (works only on demo data, not connected to the API)
+- [ ] Letter to Myself (needs generation + monthly job), Rehearsal Room (needs scenario turns), 3 AM Mode (needs awakening log), missed-call IVR page
+- [ ] HR dashboard (k-anonymity helpers exist and are tested; no query layer or opt-in flow yet), admin console, pilot analytics, Symptom Atlas
+- [ ] Web Push + reminders + scheduled jobs, PWA manifest + service worker + offline queue, alternate neutral manifest
+- [ ] Seed script, `/demo` against the live API, Hindi + English screenshot run against the live app, `npm run eval:speech`
+- [ ] Server speech providers (Sarvam/Google/Whisper), server TTS, telephony webhooks
+- [ ] GitHub Actions: only typecheck/test/build today; e2e, audit gating, Docker build, deploy still to do; remaining docs (DEPLOY, SAFETY validation plan details, THREAT-MODEL, PRIVACY, breach runbook)
+- [ ] Lighthouse/accessibility pass, translation-key CI check, 1440px visual pass
+- [ ] v1.0.0 tag (not tagged: the app is not complete)

@@ -16,7 +16,7 @@ import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
 import { MAX_PIN_FAILS, PIN_LOCK_MS, PIN_RE, checkPin, hashPin } from '../privacy/pin.js';
-import { registerHome, registerMoments } from './home.js';
+import { registerCheckins, registerHome, registerMoments } from './home.js';
 import { registerBrief } from './brief.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 
@@ -386,6 +386,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerFamily(app, ctx);
   registerHome(app, ctx);
   registerMoments(app, ctx);
+  registerCheckins(app, ctx);
   registerBrief(app, ctx);
 
   return app;

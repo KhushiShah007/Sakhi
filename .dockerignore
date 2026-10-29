@@ -1,0 +1,8 @@
+node_modules
+dist
+screenshots
+design-reference
+*.pptx
+*.log
+.git
+.github

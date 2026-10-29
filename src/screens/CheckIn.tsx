@@ -5,6 +5,8 @@ import { useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Orb, Screen, useToast } from '../components/ui'
 import { useGo, useParam } from '../components/nav'
+import { api } from '../api/client'
+import { useLive } from '../api/session'
 import { Avatar } from '../illustrations/Woman'
 import { MoodBlob } from '../illustrations/Blob'
 import { MOODS, type Mood } from '../mock/user'
@@ -13,6 +15,7 @@ export default function CheckIn({ initialMood }: { initialMood?: Mood }) {
   const { t } = useI18n()
   const go = useGo()
   const toast = useToast()
+  const live = useLive()
   const pm = useParam('mood') as Mood | null
   const [idx, setIdx] = useState(Math.max(0, MOODS.indexOf(initialMood ?? pm ?? 'hot')))
   const mood = MOODS[idx]
@@ -98,8 +101,11 @@ export default function CheckIn({ initialMood }: { initialMood?: Mood }) {
         <p className="mt-4 text-[14px] text-ink-soft">{t('ci_orb_hint')}</p>
         <button
           className="mt-1 min-h-[44px] px-4 text-[15px] font-semibold text-rose-pressed underline decoration-2 underline-offset-4"
-          onClick={() => {
-            toast.show(`${t(`mood_${mood}` as StrKey)} ✓`)
+          onClick={async () => {
+            if (live) {
+              try { await api('POST', '/api/checkins', { mood }) } catch { toast.show(t('fl_error')); return }
+              toast.show(t('ci_saved'))
+            } else toast.show(`${t(`mood_${mood}` as StrKey)} ✓`)
             setTimeout(() => go('/home'), 900)
           }}
         >

@@ -143,3 +143,25 @@ describe('GET /api/home', () => {
     expect((await app.inject({ method: 'GET', url: '/api/home' })).statusCode).toBe(401);
   });
 });
+
+describe('one-tap mood check-ins', () => {
+  it('stores one mood per day, counts as a check-in, fills the week strip, and needs consent', async () => {
+    const s = await login('+919300000020');
+    expect((await call(s, 'POST', '/api/checkins', { mood: 'purple' })).statusCode).toBe(400);
+    await call(s, 'POST', '/api/consents', { purpose: 'core_logging', granted: false });
+    expect((await call(s, 'POST', '/api/checkins', { mood: 'calm' })).statusCode).toBe(403);
+    await call(s, 'POST', '/api/consents', { purpose: 'core_logging', granted: true });
+    expect((await call(s, 'POST', '/api/checkins', { mood: 'calm' })).statusCode).toBe(200);
+    expect((await call(s, 'POST', '/api/checkins', { mood: 'tired' })).statusCode).toBe(200); // same day: replaces
+    const h = (await call(s, 'GET', '/api/home')).json();
+    expect(h.daysCheckedLast7).toBe(1); expect(h.loggedToday).toBe(true);
+    expect(h.week.find((d: { kind: string }) => d.kind === 'today').mood).toBe('tired');
+    expect((await db.query('SELECT 1 FROM checkins')).length).toBeGreaterThanOrEqual(1);
+  });
+  it('what she said outranks a mood tap on the same day', async () => {
+    const s = await login('+919300000021');
+    await call(s, 'POST', '/api/checkins', { mood: 'calm' });
+    await logAt(s, '2026-10-29T04:00:00Z', 'hot flashes and so hot');
+    expect((await call(s, 'GET', '/api/home')).json().week.find((d: { kind: string }) => d.kind === 'today').mood).toBe('hot');
+  });
+});

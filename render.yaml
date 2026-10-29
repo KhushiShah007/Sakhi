@@ -1,0 +1,18 @@
+# Render blueprint. UNTESTED (no Render account was available). Set the secrets in the dashboard.
+services:
+  - type: web
+    name: sakhi
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: DATABASE_URL, fromDatabase: { name: sakhi-db, property: connectionString } }
+      - { key: SAKHI_DATA_KEY, sync: false }      # node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+      - { key: OTP_WEBHOOK_URL, sync: false }     # your SMS gateway; the server refuses to issue OTPs without one
+      - { key: OTP_WEBHOOK_TOKEN, sync: false }
+      - { key: PUBLIC_URL, sync: false }          # https://<your-service>.onrender.com
+      - { key: ANTHROPIC_API_KEY, sync: false }   # optional
+databases:
+  - name: sakhi-db
+    plan: basic-256mb

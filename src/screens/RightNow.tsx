@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Pause, Play, Repeat, RotateCcw, RotateCw, Volume2 } from 'lucide-react'
 import { useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Screen, TopBar, Waveform } from '../components/ui'
+import { useGo } from '../components/nav'
+import { useLive } from '../api/session'
+import { speak, stopSpeaking } from '../voice/speech'
 import { HeroSwirls, Lotus, WaveEdge } from '../illustrations/art'
 
 const TOTAL = 90
@@ -16,14 +19,30 @@ function phaseAt(elapsed: number): { key: StrKey; scale: number } {
 }
 
 export default function RightNow() {
-  const { t } = useI18n()
-  const [elapsed, setElapsed] = useState(24)
+  const { t, lang } = useI18n()
+  const go = useGo()
+  const live = useLive()
+  // the scripted demo/screenshots show the exercise part-way; a real session starts at 0:00
+  const [elapsed, setElapsed] = useState(live ? 0 : 24)
   const [playing, setPlaying] = useState(true)
+  const finished = elapsed >= TOTAL
   useEffect(() => {
-    if (!playing) return
+    if (!playing || finished) return
     const id = window.setInterval(() => setElapsed((e) => (e >= TOTAL ? TOTAL : e + 1)), 1000)
     return () => window.clearInterval(id)
-  }, [playing])
+  }, [playing, finished])
+  // calm voice cue at every phase change (browser voice, offline, never a clone)
+  const lastKey = useRef<string>('')
+  const phKey = phaseAt(elapsed).key
+  useEffect(() => {
+    if (!live || !playing || finished) return
+    if (lastKey.current !== phKey) { lastKey.current = phKey; speak(t(phKey), lang) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phKey, playing, finished, live])
+  useEffect(() => { if (finished && live) { speak(t('rn_done'), lang) } }, [finished]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => stopSpeaking(), [])
+  useEffect(() => { if (!playing) stopSpeaking() }, [playing])
+  const restart = () => { lastKey.current = ''; setElapsed(0); setPlaying(true) }
   const left = TOTAL - elapsed
   const ph = phaseAt(elapsed)
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -40,7 +59,7 @@ export default function RightNow() {
       }
     >
       <div className="relative">
-        <TopBar tone="light" title={t('rightnow')} right={<button aria-label="Favourite" className="grid h-12 w-12 place-items-center rounded-full bg-white/20 text-white"><Heart size={20} /></button>} />
+        <TopBar tone="light" title={t('rightnow')} right={live ? undefined : <button aria-label="Favourite" className="grid h-12 w-12 place-items-center rounded-full bg-white/20 text-white"><Heart size={20} /></button>} />
         <div className="relative mx-auto mt-1 grid h-[270px] w-[270px] place-items-center">
           <motion.div
             className="absolute inset-0"
@@ -73,14 +92,20 @@ export default function RightNow() {
           </div>
         </div>
         <div className="mt-5 flex items-center justify-between px-2">
-          <button aria-label="Repeat" className="grid h-12 w-12 place-items-center text-ink-soft"><Repeat size={20} /></button>
+          <button aria-label="Repeat" onClick={restart} className="grid h-12 w-12 place-items-center text-ink-soft"><Repeat size={20} /></button>
           <button aria-label="Back 10 seconds" onClick={() => setElapsed((e) => Math.max(0, e - 10))} className="grid h-12 w-12 place-items-center text-ink"><RotateCcw size={22} /></button>
-          <button aria-label={playing ? 'Pause' : 'Play'} onClick={() => setPlaying((p) => !p)} className="grid h-[72px] w-[72px] place-items-center rounded-full bg-rose text-white shadow-soft">
-            {playing ? <Pause size={30} fill="currentColor" /> : <Play size={30} fill="currentColor" className="ml-1" />}
+          <button aria-label={playing && !finished ? 'Pause' : 'Play'} onClick={() => (finished ? restart() : setPlaying((p) => !p))} className="grid h-[72px] w-[72px] place-items-center rounded-full bg-rose text-white shadow-soft">
+            {playing && !finished ? <Pause size={30} fill="currentColor" /> : <Play size={30} fill="currentColor" className="ml-1" />}
           </button>
           <button aria-label="Forward 10 seconds" onClick={() => setElapsed((e) => Math.min(TOTAL, e + 10))} className="grid h-12 w-12 place-items-center text-ink"><RotateCw size={22} /></button>
-          <button aria-label="Favourite" className="grid h-12 w-12 place-items-center text-ink-soft"><Heart size={20} /></button>
+          {live ? <span className="h-12 w-12" /> : <button aria-label="Favourite" className="grid h-12 w-12 place-items-center text-ink-soft"><Heart size={20} /></button>}
         </div>
+        {finished && live && (
+          <div role="status" className="mt-5 rounded-2xl bg-white p-4 text-center shadow-card" data-testid="rn-done">
+            <p className="text-[17px] font-semibold">{t('rn_done')}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2"><button onClick={restart} className="btn-ghost bg-white">{t('rn_again')}</button><button onClick={() => go('/home')} className="btn-primary">{t('tl_done_home')}</button></div>
+          </div>
+        )}
         <div className="mt-5 flex items-center gap-3">
           <span className="text-[13px] tabular-nums text-ink-soft">{fmt(elapsed)}</span>
           <Waveform bars={34} active={playing} height={34} className="flex-1" />

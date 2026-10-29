@@ -547,6 +547,9 @@ export const S = {
   bl_hot_days: { en: 'Hot-flush days', hi: 'हॉट फ़्लैश वाले दिन', mr: 'हॉट फ्लॅशचे दिवस', gu: 'હોટ ફ્લેશના દિવસો' },
   bl_sleep_days: { en: 'Poor-sleep days', hi: 'ख़राब नींद वाले दिन', mr: 'अपुऱ्या झोपेचे दिवस', gu: 'ખરાબ ઊંઘના દિવસો' },
   bl_week: { en: 'Wk', hi: 'हफ़्ता', mr: 'आठवडा', gu: 'અઠવાડિયું' },
+  rn_done: { en: 'Well done. Notice how your body feels now.', hi: 'बहुत अच्छा। अब देखिए आपका शरीर कैसा महसूस कर रहा है।', mr: 'छान. आता तुमचे शरीर कसे वाटते ते पाहा.', gu: 'શાબાશ. હવે તમારું શરીર કેવું લાગે છે તે જુઓ.' },
+  rn_again: { en: 'Do it again', hi: 'फिर से करें', mr: 'पुन्हा करा', gu: 'ફરી કરો' },
+  ci_saved: { en: 'Saved. That counts as a check-in.', hi: 'सहेज लिया। इसे चेक-इन गिना जाएगा।', mr: 'साठवले. हे चेक-इन म्हणून गणले जाईल.', gu: 'સાચવ્યું. તેને ચેક-ઇન ગણાશે.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

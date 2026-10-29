@@ -1,0 +1,21 @@
+# One-command local run: `docker compose up --build`  ->  http://localhost:8787
+# UNTESTED in the authoring environment (no Docker). The demo OTP is 123456 because DEMO_AUTH=true here; never use that in production.
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: sakhi, POSTGRES_PASSWORD: sakhi, POSTGRES_DB: sakhi }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U sakhi"], interval: 3s, timeout: 3s, retries: 20 }
+  app:
+    build: .
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["8787:8787"]
+    environment:
+      NODE_ENV: development          # production refuses DEMO_AUTH=true by design
+      DATABASE_URL: postgres://sakhi:sakhi@db:5432/sakhi
+      SAKHI_DATA_KEY: ${SAKHI_DATA_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}   # dev only: generate a real one
+      DEMO_AUTH: "true"
+      DEMO_MODE: "true"
+      PUBLIC_URL: http://localhost:8787
+volumes:
+  pgdata:

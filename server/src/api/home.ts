@@ -5,6 +5,7 @@ import { moodForDay, type Mood } from '../safety/mood.js';
 import type { Symptom } from '../safety/mrs.js';
 import { symptomWeather, type RecentSignals, type SymptomWeather } from '../safety/weather.js';
 import { decrypt } from '../privacy/crypto.js';
+import { z } from 'zod';
 import type { Ctx } from './family.js';
 
 const IST_MS = 5.5 * 3600_000;
@@ -63,6 +64,19 @@ export function registerMoments(app: FastifyInstance, c: Ctx) {
   });
 }
 
+export function registerCheckins(app: FastifyInstance, c: Ctx) {
+  const MOODS = ['calm', 'hot', 'tired', 'anxious', 'low', 'okay'] as const;
+  app.post('/api/checkins', c.guarded, async (req, reply) => {
+    const b = z.object({ mood: z.enum(MOODS) }).strict().safeParse(req.body);
+    if (!b.success) return c.bad(reply, b.error);
+    const userId = req.auth!.userId;
+    if (!(await c.hasConsent(userId, 'core_logging' as never))) return reply.code(403).send({ error: 'consent_required', purpose: 'core_logging' });
+    await c.db.query('INSERT INTO checkins(user_id, day, mood) VALUES ($1,$2,$3) ON CONFLICT (user_id, day) DO UPDATE SET mood=$3', [userId, istDay(c.now()), b.data.mood]);
+    await c.audit(userId, 'user', 'checkin', 'mood');
+    return { ok: true };
+  });
+}
+
 export function registerHome(app: FastifyInstance, c: Ctx & { weather: WeatherProvider }) {
   const { db, now } = c;
 
@@ -72,10 +86,12 @@ export function registerHome(app: FastifyInstance, c: Ctx & { weather: WeatherPr
     const clock = now();
     const today = istDay(clock);
     const rows = await loadRecentLogs(db, userId, clock, 40);
+    const checks = new Map((await db.query<{ day: string; mood: Mood }>("SELECT to_char(day,'YYYY-MM-DD') AS day, mood FROM checkins WHERE user_id=$1 AND day >= $2", [userId, addDays(today, -40)])).map((r) => [r.day, r.mood]));
 
     const byDay = new Map<string, LogRow[]>();
     for (const r of rows) { const d = istDay(new Date(r.at)); byDay.set(d, [...(byDay.get(d) ?? []), r]); }
-    const dayMood = (d: string) => moodForDay((byDay.get(d) ?? []).map((r) => ({ symptom: r.symptom, severity: r.severity })));
+    // what she said wins; a one-tap check-in fills the days she only tapped a mood
+    const dayMood = (d: string) => { const m = moodForDay((byDay.get(d) ?? []).map((r) => ({ symptom: r.symptom, severity: r.severity }))); return m.mood ? m : { mood: checks.get(d) ?? null, load: 0 }; };
 
     const dow = new Date(Date.parse(today + 'T00:00:00Z')).getUTCDay(); // 0 = Sunday
     const week = Array.from({ length: 7 }, (_, i) => {
@@ -86,12 +102,13 @@ export function registerHome(app: FastifyInstance, c: Ctx & { weather: WeatherPr
     });
     const month = Array.from({ length: 30 }, (_, i) => dayMood(addDays(today, i - 29)).mood);
     const last7 = Array.from({ length: 7 }, (_, i) => addDays(today, -i));
+    const checked = (d: string) => byDay.has(d) || checks.has(d);
     const todays = (byDay.get(today) ?? []).sort((a, b) => b.severity - a.severity);
     const uniqueToday = todays.filter((r, i, a) => a.findIndex((x) => x.symptom === r.symptom) === i).slice(0, 3);
 
     const w = await weatherFor(db, userId, clock, c.weather);
     const shared = (await db.query('SELECT 1 FROM household_alerts WHERE user_id=$1 AND for_date=$2', [userId, addDays(today, 1)])).length > 0;
-    const allDays = new Set(rows.map((r) => istDay(new Date(r.at))));
+    const allDays = new Set([...rows.map((r) => istDay(new Date(r.at))), ...checks.keys()]);
     const [signals, brief] = await Promise.all([
       db.query('SELECT 1 FROM signals WHERE user_id=$1 LIMIT 1', [userId]),
       db.query("SELECT 1 FROM audit_log WHERE user_id=$1 AND resource='brief' LIMIT 1", [userId]),
@@ -100,8 +117,8 @@ export function registerHome(app: FastifyInstance, c: Ctx & { weather: WeatherPr
     return {
       name: u.name, city: u.city, today, weekday: dow, week, month,
       todayTop: uniqueToday.map((r) => ({ symptom: r.symptom, severity: r.severity })),
-      loggedToday: todays.length > 0,
-      daysCheckedLast7: last7.filter((d) => byDay.has(d)).length,
+      loggedToday: todays.length > 0 || checks.has(today),
+      daysCheckedLast7: last7.filter(checked).length,
       weather: { level: w.level, score: w.score, factors: w.factors, estimate: true as const, note: w.note, tomorrow: w.tomorrow, shared },
       milestones: { firstWeek: allDays.size >= 7, firstSignal: signals.length > 0, firstBrief: brief.length > 0 },
     };

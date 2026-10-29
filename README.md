@@ -8,9 +8,15 @@ Employers only ever see k-anonymised aggregates.
 
 Team Slaughter · HABIT Innovate Bootcamp.
 
-> ⚠️ **UI prototype only. All data is simulated.** There is no backend, no AI, no speech recognition and no
-> WhatsApp integration. Every "voice" transcript, symptom detection, reflection and chat message is scripted
-> mock data with timers. Sunita (48, Pune), Rajesh, Anaya, Meena Tai and "Navrang Textiles" are fictional.
+> **Status: working prototype, not a finished product.** Sign-in, consent, voice/typed Vent with tap-to-confirm, Home with real
+> Open-Meteo weather, Say it for me, family link + WhatsApp webhooks, Family & Privacy centre (PIN lock, export, deletion),
+> the Doctor-Ready Brief with PDF and doctor link all run against a real API and database. See [PROGRESS.md](PROGRESS.md) for
+> exactly what is built and what is not (HR dashboard, admin console, Letters, Rehearsal Room, 3 AM Mode, push, IVR and PWA
+> offline are still the scripted prototype). Nothing here is clinically validated: every clinical text is *pending clinician review*,
+> and every target in the docs is a hypothesis, not a result. Sunita, Rajesh, Anaya, Meena Tai and "Navrang Textiles" are fictional.
+
+**Run it for real:** see [SETUP.md](SETUP.md) (`npm install && npm run build:web && DEMO_AUTH=true npm start`, no database or keys needed).
+The GitHub Pages site below has no backend, so it shows the scripted demo only.
 
 **Live:** https://khushishah007.github.io/Sakhi/ (see *Deploy* below)
 
