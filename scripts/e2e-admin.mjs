@@ -1,4 +1,4 @@
-// Real-stack check of the admin console on SEEDED data (scripts/reseed.sh; ADMIN_KEY=admin-demo-key).
+// Real-stack check of the admin console on SEEDED data. It records a real review, so run it against a fresh seed: sh scripts/reseed.sh (ADMIN_KEY=admin-demo-key).
 import { chromium } from 'playwright'
 import { mkdirSync, promises as fs } from 'node:fs'
 
@@ -27,7 +27,8 @@ await page.getByRole('button', { name: 'Open console' }).click()
 await page.getByTestId('review-summary').waitFor()
 const summary = await page.getByTestId('review-summary').innerText()
 const [, pending, total] = summary.match(/(\d+) of (\d+) items are pending clinician review/)
-ok('honest from the start: every item is pending clinician review, none is claimed reviewed', pending === total && Number(total) >= 20 && (await page.getByTestId('reviewed').count()) === 0, summary.split('\n')[0])
+const already = await page.getByTestId('reviewed').count()
+ok('honest: nothing is claimed reviewed except items with a recorded name and date (reviewed + pending = total)', Number(total) >= 20 && already + Number(pending) === Number(total) && (already === 0 || /Reviewed by .+ on \d{4}-\d{2}-\d{2}/.test(await page.getByTestId('reviewed').first().innerText())), `${already} reviewed, ${pending} pending`)
 ok('it says draft versions are not served to users', /NOT served/.test(summary))
 await page.screenshot({ path: `${OUT}/90-admin-content.png`, fullPage: false })
 
@@ -45,10 +46,10 @@ await page.getByText(/cannot be dated in the future/).waitFor()
 ok('a future-dated review is refused', true)
 await page.getByLabel('Date of review').fill('2026-10-01')
 await page.getByRole('button', { name: 'Record review' }).click()
-await page.getByTestId('reviewed').waitFor()
-ok('a named, dated review is shown as such, and only that one item changes', /Dr Meera Joshi on 2026-10-01/.test(await page.getByTestId('reviewed').innerText()) && (await page.getByTestId('reviewed').count()) === 1)
+await page.waitForFunction((n) => document.querySelectorAll('[data-testid=reviewed]').length === n, already + 1)
+ok('a named, dated review is shown as such, and only that one item changes', (await page.getByTestId('reviewed').filter({ hasText: 'Dr Meera Joshi on 2026-10-01' }).count()) >= 1 && (await page.getByTestId('reviewed').count()) === already + 1)
 const after = (await page.getByTestId('review-summary').innerText()).match(/(\d+) of (\d+) items are pending/)
-ok('the pending count drops by exactly one', Number(after[1]) === Number(total) - 1)
+ok('the pending count drops by exactly one', Number(after[1]) === Number(pending) - 1)
 
 // pilot analytics + atlas
 await page.getByRole('tab', { name: 'Pilot analytics' }).click()

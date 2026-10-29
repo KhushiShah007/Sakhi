@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useLive } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import MissedCallLive from './MissedCallLive'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Grid3x3, Mic, MicOff, Phone, PhoneIncoming, PhoneOff, Volume2, WifiOff } from 'lucide-react'
 import { useI18n } from '../i18n'
@@ -20,7 +23,14 @@ function FeaturePhone() {
   )
 }
 
+/** Live simulator when logged in (same handlers as the telephony webhooks); demo/screenshots/static hosting keep the scripted screen. */
 export default function MissedCall() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <MissedCallLive /> : <MissedCallMock />
+}
+
+function MissedCallMock() {
   const { t } = useI18n()
   const q = useParam('stage') as Stage | null
   const [stage, setStage] = useState<Stage>(q ?? 'idle')

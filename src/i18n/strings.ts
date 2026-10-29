@@ -596,6 +596,22 @@ export const S = {
   wp_not_found: { en: 'We could not find that code.', hi: 'यह कोड नहीं मिला।', mr: 'हा कोड सापडला नाही.', gu: 'આ કોડ મળ્યો નથી.' },
   bl_seen: { en: 'I have seen my doctor', hi: 'मैं डॉक्टर से मिल चुकी हूँ', mr: 'मी डॉक्टरांना भेटले', gu: 'હું ડૉક્ટરને મળી ચૂકી છું' },
   bl_seen_done: { en: 'Noted. Thank you.', hi: 'दर्ज कर लिया। धन्यवाद।', mr: 'नोंदवले. धन्यवाद.', gu: 'નોંધ્યું. આભાર.' },
+
+  // ---- offline
+  off_title: { en: 'You are offline', hi: 'आप ऑफ़लाइन हैं', mr: 'तुम्ही ऑफलाइन आहात', gu: 'તમે ઑફલાઇન છો' },
+  off_body: { en: 'Right Now and 3 AM still work without a connection. Everything else needs the internet, and nothing you saved is lost.', hi: 'Right Now और 3 AM बिना इंटरनेट भी चलते हैं। बाकी सब के लिए इंटरनेट चाहिए, और आपका सहेजा हुआ कुछ नहीं खोता।', mr: 'Right Now आणि 3 AM इंटरनेटशिवायही चालतात. बाकी सर्वांसाठी इंटरनेट लागते, आणि तुम्ही साठवलेले काहीही हरवत नाही.', gu: 'Right Now અને 3 AM ઇન્ટરનેટ વગર પણ ચાલે છે. બાકી બધા માટે ઇન્ટરનેટ જોઈએ, અને તમે સાચવેલું કંઈ ખોવાતું નથી.' },
+  off_open: { en: 'Open Right Now', hi: 'Right Now खोलें', mr: 'Right Now उघडा', gu: 'Right Now ખોલો' },
+  ci_queued: { en: 'Saved on this phone. It will sync when you are online.', hi: 'इस फ़ोन में सहेजा। इंटरनेट आने पर सिंक होगा।', mr: 'या फोनमध्ये साठवले. इंटरनेट आल्यावर सिंक होईल.', gu: 'આ ફોનમાં સાચવ્યું. ઇન્ટરનેટ આવે ત્યારે સિંક થશે.' },
+
+  // ---- missed-call simulator
+  mc_sim_sub: { en: 'On any basic phone, give a missed call and Sakhi calls back with a calming breath, then listens. This simulator runs the same script and safety rules as the real line.', hi: 'किसी भी साधारण फ़ोन से मिस्ड कॉल दें, सखी वापस कॉल करके शांत साँस कराती है और सुनती है। यह सिम्युलेटर असली लाइन जैसी ही स्क्रिप्ट और सुरक्षा नियम चलाता है।', mr: 'कोणत्याही साध्या फोनवरून मिस्ड कॉल द्या, सखी परत कॉल करून शांत श्वास करवते आणि ऐकते. हा सिम्युलेटर खऱ्या लाइनसारखीच स्क्रिप्ट आणि सुरक्षा नियम चालवतो.', gu: 'કોઈ પણ સાદા ફોન પરથી મિસ્ડ કૉલ આપો, સખી પાછો કૉલ કરીને શાંત શ્વાસ કરાવે છે અને સાંભળે છે. આ સિમ્યુલેટર અસલ લાઇન જેવી જ સ્ક્રિપ્ટ અને સલામતી નિયમો ચલાવે છે.' },
+  mc_start: { en: 'Simulate a missed call', hi: 'मिस्ड कॉल आज़माएँ', mr: 'मिस्ड कॉल करून पाहा', gu: 'મિસ્ડ કૉલ અજમાવો' },
+  mc_again: { en: 'Call again', hi: 'फिर से कॉल करें', mr: 'पुन्हा कॉल करा', gu: 'ફરી કૉલ કરો' },
+  mc_ringing: { en: 'Sakhi is calling you back…', hi: 'सखी आपको वापस कॉल कर रही है…', mr: 'सखी तुम्हाला परत कॉल करत आहे…', gu: 'સખી તમને પાછો કૉલ કરી રહી છે…' },
+  mc_listening: { en: 'Speak, or type what you would say after the beep', hi: 'बीप के बाद जो कहेंगी, वह बोलें या लिखें', mr: 'बीपनंतर जे म्हणाल ते बोला किंवा लिहा', gu: 'બીપ પછી જે કહેશો તે બોલો અથવા લખો' },
+  mc_ended: { en: 'Call ended. Nothing was saved.', hi: 'कॉल समाप्त। कुछ भी सहेजा नहीं गया।', mr: 'कॉल संपला. काहीही साठवले नाही.', gu: 'કૉલ પૂરો. કંઈ સાચવ્યું નથી.' },
+  mc_hang: { en: 'Hang up', hi: 'कॉल काटें', mr: 'कॉल कट करा', gu: 'કૉલ કાપો' },
+  mc_note: { en: 'Nothing is saved on a call. Open the app to confirm and save anything.', hi: 'कॉल पर कुछ भी सहेजा नहीं जाता। कुछ सहेजना हो तो ऐप खोलकर पक्का करें।', mr: 'कॉलवर काहीही साठवले जात नाही. काही साठवायचे असल्यास ॲप उघडून पक्के करा.', gu: 'કૉલ પર કંઈ સચવાતું નથી. કંઈ સાચવવું હોય તો ઍપ ખોલીને પાક્કું કરો.' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

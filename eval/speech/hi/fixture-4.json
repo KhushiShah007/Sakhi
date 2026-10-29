@@ -1,0 +1,1 @@
+{"fixture": true, "reference": "सिर में दर्द है और उदास लग रहा है", "asr": "सिर में दर्द है और उदास लग रहा है", "expected": ["headache", "low_mood"]}

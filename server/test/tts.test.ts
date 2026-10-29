@@ -102,3 +102,11 @@ describe('POST /api/tts', () => {
     expect(rows).toContain('elevenlabs'); expect(rows).not.toContain('very private sentence');
   });
 });
+
+describe('security headers allow what the voice and PWA need, and nothing wider', () => {
+  it('permits blob: audio (server voice) and the service worker, but not remote scripts or frames', async () => {
+    const csp = String((await on.inject({ method: 'GET', url: '/healthz' })).headers['content-security-policy']);
+    expect(csp).toMatch(/media-src 'self' blob:/); expect(csp).toMatch(/worker-src 'self'/); expect(csp).toMatch(/manifest-src 'self'/);
+    expect(csp).toMatch(/default-src 'self'/); expect(csp).toMatch(/frame-ancestors 'none'/); expect(csp).not.toMatch(/script-src[^;]*(\*|unsafe)/);
+  });
+});

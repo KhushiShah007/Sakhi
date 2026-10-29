@@ -1,16 +1,55 @@
 name: ci
-on: [push, pull_request]
+on:
+  push: { branches: [main] }
+  pull_request:
+# NOTE: this workflow was written without being able to run GitHub Actions. If a step fails on the first run, fix the step, not the tests.
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - run: npx tsc -b                    # web app typecheck
       - run: npm run typecheck:server
-      - run: npm test
-      - run: npm run test:safety
-      - run: npm run build
-      - run: npm audit --audit-level=high
-        continue-on-error: true
+      - run: npm run check:i18n            # fails on any missing/empty translation or mismatched placeholder
+      - run: npm test                      # unit + integration (embedded Postgres)
+      - run: npm run test:safety           # the 80-prompt adversarial AI safety suite
+      - run: npm run build:web
+  e2e:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:web
+      - name: seed fictional demo data and start the app
+        env: { DEMO_AUTH: 'true', ADMIN_KEY: admin-demo-key, RATE_LIMIT_PER_MIN: '100000', PGLITE_DIR: .data/ci }
+        run: |
+          npx tsx server/src/seed.ts
+          (npx tsx server/src/index.ts > server.log 2>&1 &)
+          for i in $(seq 1 40); do curl -sf localhost:8787/healthz && break; sleep 1; done
+      - run: npm run e2e:live
+      - if: failure()
+        run: cat server.log
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: screenshots, path: screenshots/live, if-no-files-found: ignore }
+  docker:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t sakhi:ci .
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high

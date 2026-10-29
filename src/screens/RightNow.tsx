@@ -5,7 +5,7 @@ import { useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Screen, TopBar, Waveform } from '../components/ui'
 import { useGo } from '../components/nav'
-import { useLive } from '../api/session'
+import { useSession } from '../api/session'
 import { speak, stopSpeaking } from '../voice/speech'
 import { HeroSwirls, Lotus, WaveEdge } from '../illustrations/art'
 
@@ -21,7 +21,8 @@ function phaseAt(elapsed: number): { key: StrKey; scale: number } {
 export default function RightNow() {
   const { t, lang } = useI18n()
   const go = useGo()
-  const live = useLive()
+  const { status } = useSession()
+  const live = status === 'authed' || status === 'netdown' // works offline: it needs no server
   // the scripted demo/screenshots show the exercise part-way; a real session starts at 0:00
   const [elapsed, setElapsed] = useState(live ? 0 : 24)
   const [playing, setPlaying] = useState(true)

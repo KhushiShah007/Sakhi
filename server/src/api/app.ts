@@ -22,6 +22,7 @@ import { registerLetters } from './letters.js';
 import { registerNight } from './night.js';
 import { registerHr } from './hr.js';
 import { registerAdmin } from './admin.js';
+import { registerIvr } from './ivr.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
@@ -80,7 +81,7 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
   app.addHook('onSend', async (_req, reply) => {
     reply.header('x-content-type-options', 'nosniff').header('x-frame-options', 'DENY').header('referrer-policy', 'no-referrer')
       .header('cache-control', 'no-store').header('permissions-policy', 'camera=(), geolocation=(self), microphone=(self)')
-      .header('content-security-policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com; frame-ancestors 'none'; base-uri 'self'");
+      .header('content-security-policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com; frame-ancestors 'none'; base-uri 'self'");
     if (prod) reply.header('strict-transport-security', 'max-age=31536000; includeSubDomains');
   });
 
@@ -420,6 +421,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerNight(app, ctx);
   registerHr(app, ctx);
   registerAdmin(app, ctx);
+  registerIvr(app, { ...ctx, phoneHash });
 
   return app;
 }

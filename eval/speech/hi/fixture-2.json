@@ -1,0 +1,1 @@
+{"fixture": true, "reference": "गर्मी लग रही है और घबराहट हो रही है", "asr": "गर्मी लग रही है और घबराहट हो रही है", "expected": ["hot_flash", "anxiety"]}

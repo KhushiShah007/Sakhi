@@ -1,16 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, ApiError, setCsrf, type Health, type Me } from './client'
 import { setServerTts } from '../voice/speech'
+import { flushQueue } from './queue'
 
 /**
  * offline = no API behind this page (static hosting): screens run on built-in demo data.
  * anon    = API present, nobody logged in.
+ * netdown = the API exists and she has an account here, but the network is down: only Right Now and 3 AM run, never demo data.
  * authed  = logged in: screens use live data.
  */
-type Status = 'loading' | 'offline' | 'anon' | 'authed'
+type Status = 'loading' | 'offline' | 'netdown' | 'anon' | 'authed'
 interface Ctx { status: Status; me: Me | null; health: Health | null; refresh: () => Promise<void>; logout: () => Promise<void>; unlock: (pin: string) => Promise<void> }
 const UNLOCKED = 'sakhi.unlocked'
 const HIDDEN_AT = 'sakhi.hiddenAt'
+const SEEN = 'sakhi.hasAccount'
+const lsGet = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
+const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* private mode */ } }
 const sessionStorageGet = (k: string) => { try { return sessionStorage.getItem(k) } catch { return null } }
 const sessionStorageSet = (k: string, v: string) => { try { sessionStorage.setItem(k, v) } catch { /* private mode */ } }
 const NEUTRAL_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F4F1EA'/%3E%3Cpath d='M18 20h28M18 30h28M18 40h18' stroke='%235B6378' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E"
@@ -27,7 +32,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const h = await api<Health>('GET', '/healthz')
       setServerTts(h.tts === 'server') // natural voice from the server when a key is configured, browser voice otherwise
       setHealth(h)
-    } catch { setStatus('offline'); setMe(null); return }
+    } catch (e) {
+      // a non-JSON answer means there is no API at all (static hosting); a network error means the connection is down
+      setMe(null)
+      setStatus(!(e instanceof ApiError) && lsGet(SEEN) === '1' ? 'netdown' : 'offline')
+      return
+    }
     try {
       const sess = await api<{ authenticated: boolean; me?: Me & { csrf: string } }>('GET', '/api/session')
       if (!sess.authenticated || !sess.me) { setMe(null); setStatus('anon'); return }
@@ -38,10 +48,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await api('POST', '/api/lock')
         m = await api<Me & { csrf: string }>('GET', '/api/me')
       }
-      setMe(m); setStatus('authed')
+      setMe(m); setStatus('authed'); lsSet(SEEN, '1')
+      void flushQueue() // send anything saved while she was offline
     } catch (e) {
       setMe(null)
-      setStatus(e instanceof ApiError && e.status === 401 ? 'anon' : 'offline')
+      setStatus(e instanceof ApiError && e.status === 401 ? 'anon' : !(e instanceof ApiError) && lsGet(SEEN) === '1' ? 'netdown' : 'offline')
     }
   }, [])
 
@@ -63,10 +74,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('visibilitychange', on)
   }, [me?.hasPin, me?.locked, refresh])
 
-  // Discreet Mode looks like an ordinary notes app in the browser tab
+  // Discreet Mode looks like an ordinary notes app: tab title, icon and the installed-app manifest
   useEffect(() => {
-    if (me?.discreet || me?.locked) { document.title = 'Notes'; setIcon(NEUTRAL_ICON) }
+    if (me?.discreet || me?.locked) { document.title = 'Notes'; setIcon(NEUTRAL_ICON); document.querySelector<HTMLLinkElement>('link[rel="manifest"]')?.setAttribute('href', './manifest-neutral.webmanifest') }
   }, [me?.discreet, me?.locked])
+
+  // coming back online: re-check the session (this restores the CSRF token), which then syncs what was saved on this phone
+  useEffect(() => { const on = () => { void refresh() }; window.addEventListener('online', on); return () => window.removeEventListener('online', on) }, [refresh])
 
   const unlock = useCallback(async (pin: string) => {
     await api('POST', '/api/pin/verify', { pin })

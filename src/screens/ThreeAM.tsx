@@ -4,14 +4,14 @@ import { BellOff, Mic, Moon, Snowflake, X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { Orb, Screen, useToast } from '../components/ui'
 import { useEmbedded, useGo } from '../components/nav'
-import { useLive } from '../api/session'
+import { useSession } from '../api/session'
 import ThreeAMLive from './ThreeAMLive'
 
 /** Live when logged in; demo/screenshots/static hosting keep the scripted screen. */
 export default function ThreeAM() {
-  const live = useLive()
+  const { status } = useSession()
   const embedded = useEmbedded()
-  return live && !embedded ? <ThreeAMLive /> : <ThreeAMMock />
+  return (status === 'authed' || status === 'netdown') && !embedded ? <ThreeAMLive /> : <ThreeAMMock />
 }
 
 function ThreeAMMock() {

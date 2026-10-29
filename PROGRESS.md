@@ -45,11 +45,20 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [x] `npm run seed`: fictional Sunita household + Navrang Textiles (308 synthetic employees, two sites too small to show)
 - [x] 317 unit/integration tests (vitest capped at 3 workers: each file boots its own embedded Postgres)
 
+## PWA, offline, CI, docs (section 11)
+- [x] Installable PWA: manifest + neutral "Notes" manifest/icons (swapped in Discreet Mode), service worker caches the shell and built assets only (never /api, /f, /b, /l), offline opens the app, Right Now / 3 AM / check-in work with no network and a signed-in user never sees demo data; offline check-ins queue (mood only) and sync when back online; CSP now allows blob audio; `node scripts/e2e-pwa.mjs`
+- [x] `npm run check:i18n` (527 strings x 4 languages, placeholders consistent) wired into CI; CI workflow rewritten (typecheck, i18n, unit, safety, build, e2e on seeded data, docker build, audit). NOT run on GitHub Actions from here.
+- [x] `npm run eval:speech` harness (honest: prints NOT A RESULT without ~20 real clips per language)
+- [x] Docs: README, SETUP, DEPLOY, DECISIONS, SAFETY (validation plan), THREAT-MODEL, PRIVACY (with breach runbook)
+
+## Missed-call line (section 12)
+- [x] Telephony webhooks (`/webhooks/ivr/missed-call`, `/answer`, `/speech`; shared secret `IVR_WEBHOOK_SECRET`; JSON or Twilio-style XML): known number -> callback -> Right Now script in her language -> speech goes through the SAME safety pipeline; signed short-lived session so speech cannot be posted "as" someone else; nothing is saved or logged (no way to confirm by phone); crisis reply with helplines read digit by digit
+- [x] In-app simulator (`#/missed-call`) calls the same handlers; `node scripts/e2e-ivr.mjs`. NOT tried against a real Twilio/Exotel account.
+
 ## Still the scripted prototype (works only on demo data, not connected to the API)
-- [ ] missed-call IVR page (webhook endpoints + simulator)
-- [ ] Web Push + reminders + scheduled jobs, PWA manifest + service worker + offline queue, alternate neutral manifest
+- [ ] Web Push + check-in reminders + Symptom Weather alerts (VAPID); the monthly Letter job exists, no other scheduler
 - [ ] Seed script, `/demo` against the live API, Hindi + English screenshot run against the live app, `npm run eval:speech`
-- [ ] Server speech providers (Sarvam/Google/Whisper), server TTS, telephony webhooks
-- [ ] GitHub Actions: only typecheck/test/build today; e2e, audit gating, Docker build, deploy still to do; remaining docs (DEPLOY, SAFETY validation plan details, THREAT-MODEL, PRIVACY, breach runbook)
-- [ ] Lighthouse/accessibility pass, translation-key CI check, 1440px visual pass
+- [ ] Server speech-to-text providers (Sarvam/Google/Whisper): only the browser Web Speech API is used (typed fallback always works). Server TTS (ElevenLabs) exists, untried against the real API.
+- [ ] CI is written but unverified on GitHub; no scheduled retention deletion
+- [ ] Lighthouse/accessibility audit (not run), 1440px visual pass of the live app
 - [ ] v1.0.0 tag (not tagged: the app is not complete)

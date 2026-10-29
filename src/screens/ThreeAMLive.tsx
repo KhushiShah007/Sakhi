@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { BellOff, Moon, Snowflake, Volume2, X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
-import { api } from '../api/client'
+import { apiQueued } from '../api/queue'
 import { Orb, Screen } from '../components/ui'
 import { useGo } from '../components/nav'
 import { speak, stopSpeaking } from '../voice/speech'
@@ -39,7 +39,7 @@ export default function ThreeAMLive() {
   }
   const stopGuide = () => { run.current++; stopSpeaking(); setGuiding(false) }
   const goBackToSleep = () => { stopGuide(); setMinutes(Math.max(1, Math.round((Date.now() - started.current) / 60_000))); setStage('ask') }
-  const save = async () => { try { await api('POST', '/api/awakenings', { minutes }); setStage('saved') } catch { setErr(true) } }
+  const save = async () => { try { await apiQueued('POST', '/api/awakenings', { minutes }); setStage('saved') } catch { setErr(true) } }
   const awake = Math.max(1, Math.round((now.getTime() - started.current) / 60_000))
   const clock = now.toLocaleTimeString(`${lang}-IN`, { hour: 'numeric', minute: '2-digit' })
 

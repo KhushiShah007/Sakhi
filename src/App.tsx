@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { I18nProvider } from './i18n'
+import { I18nProvider, useI18n } from './i18n'
 import { SessionProvider, useSession } from './api/session'
 import Login, { Consent } from './screens/Login'
 import OnboardingLive from './screens/OnboardingLive'
@@ -40,10 +40,22 @@ function Protected({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   if (status === 'loading') return <div role="status" className="grid h-[100dvh] place-items-center text-ink-soft">…</div>
   if (status === 'anon') return <Navigate to="/login" replace />
+  if (status === 'netdown' && !['/right-now', '/3am', '/checkin'].includes(pathname)) return <OfflineNotice />
   if (status === 'authed' && me && !me.onboarded && pathname !== '/onboarding' && pathname !== '/consent') return <Navigate to="/onboarding" replace />
   return <>{children}</>
 }
 const guard = (el: ReactNode) => phone(<Protected>{el}</Protected>)
+
+function OfflineNotice() {
+  const { t } = useI18n()
+  return (
+    <div role="status" className="wash flex h-full flex-col items-center justify-center px-8 text-center">
+      <h1 className="text-[26px] font-bold">{t('off_title')}</h1>
+      <p className="mt-3 text-[17px] leading-relaxed text-ink-soft">{t('off_body')}</p>
+      <a href="#/right-now" className="btn-primary mt-6 w-full">{t('off_open')}</a>
+    </div>
+  )
+}
 
 function OnboardingRoute() {
   const { status } = useSession()

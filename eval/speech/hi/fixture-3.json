@@ -1,0 +1,1 @@
+{"fixture": true, "reference": "घुटनों में दर्द है और चिड़चिड़ापन", "asr": "घुटनों में दर्द है और चिड़चिड़ापन", "expected": ["joint_pain", "irritability"]}
