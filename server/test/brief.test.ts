@@ -79,7 +79,7 @@ describe('composeBrief', () => {
   });
   it('is honest when there is little data', () => {
     const few = composeBrief({ rows: [row('hot_flash', 2, days(1)[0])], today: '2026-10-29', name: 'A', age: 50, city: null, stage: null, lang: 'en', now: new Date() });
-    expect(few.lowData).toBe(true); expect(few.highlights[0]).toMatch(/Only 1 days of check-ins/);
+    expect(few.lowData).toBe(true); expect(few.highlights[0]).toMatch(/Only 1 day of check-ins/);
     const none = composeBrief({ rows: [], today: '2026-10-29', name: 'A', age: 50, city: null, stage: null, lang: 'en', now: new Date() });
     expect(none.total.score).toBe(0); expect(none.ruleOut).toEqual([]);
   });

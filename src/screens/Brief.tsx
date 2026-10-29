@@ -3,6 +3,9 @@ import { Bone, CheckSquare, Download, Dumbbell, HeartPulse, Languages, MessageCi
 import { useI18n } from '../i18n'
 import { Screen, TopBar, useToast } from '../components/ui'
 import { brief } from '../mock/clinical'
+import { useLive } from '../api/session'
+import { useEmbedded } from '../components/nav'
+import BriefLive from './BriefLive'
 
 const N20_ICON = { bone: Bone, heart: HeartPulse, strength: Dumbbell, screen: ScanSearch }
 
@@ -15,7 +18,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+/** Live when logged in; demo/screenshots/static hosting keep the scripted version. */
 export default function Brief() {
+  const live = useLive()
+  const embedded = useEmbedded()
+  return live && !embedded ? <BriefLive /> : <BriefMock />
+}
+
+function BriefMock() {
   const { t } = useI18n()
   const toast = useToast()
   return (

@@ -527,6 +527,26 @@ export const S = {
   hm_ask: { en: 'Did it help?', hi: 'क्या इससे मदद मिली?', mr: 'यामुळे मदत झाली का?', gu: 'શું આનાથી મદદ મળી?' },
   hm_helped: { en: 'It helped', hi: 'मदद मिली', mr: 'मदत झाली', gu: 'મદદ મળી' },
   hm_helped_done: { en: 'It helped 💛', hi: 'मदद मिली 💛', mr: 'मदत झाली 💛', gu: 'મદદ મળી 💛' },
+
+  // ---- live brief
+  bl_doctor: { en: 'For my doctor (English)', hi: 'मेरे डॉक्टर के लिए (अंग्रेज़ी)', mr: 'माझ्या डॉक्टरांसाठी (इंग्रजी)', gu: 'મારા ડૉક્ટર માટે (અંગ્રેજી)' },
+  bl_mine: { en: 'In my language', hi: 'मेरी भाषा में', mr: 'माझ्या भाषेत', gu: 'મારી ભાષામાં' },
+  bl_download: { en: 'Download PDF', hi: 'PDF डाउनलोड करें', mr: 'PDF डाउनलोड करा', gu: 'PDF ડાઉનલોડ કરો' },
+  bl_share: { en: 'Share with my doctor', hi: 'डॉक्टर के साथ साझा करें', mr: 'डॉक्टरांसोबत शेअर करा', gu: 'ડૉક્ટર સાથે શેર કરો' },
+  bl_link_ready: { en: 'Doctor link ready. It works for 7 days and you can stop it any time.', hi: 'डॉक्टर का लिंक तैयार है। यह 7 दिन चलेगा और आप कभी भी इसे बंद कर सकती हैं।', mr: 'डॉक्टरांची लिंक तयार आहे. ती 7 दिवस चालेल आणि तुम्ही केव्हाही बंद करू शकता.', gu: 'ડૉક્ટરની લિંક તૈયાર છે. તે 7 દિવસ ચાલશે અને તમે ક્યારેય બંધ કરી શકો.' },
+  bl_copy: { en: 'Copy link', hi: 'लिंक कॉपी करें', mr: 'लिंक कॉपी करा', gu: 'લિંક કૉપી કરો' },
+  bl_whatsapp: { en: 'Send on WhatsApp', hi: 'WhatsApp पर भेजें', mr: 'WhatsApp वर पाठवा', gu: 'WhatsApp પર મોકલો' },
+  bl_print: { en: 'Print or save this view', hi: 'यह पन्ना प्रिंट या सेव करें', mr: 'हे पान प्रिंट किंवा सेव्ह करा', gu: 'આ પાનું પ્રિન્ટ કે સેવ કરો' },
+  bl_stop: { en: 'Stop sharing', hi: 'साझा करना बंद करें', mr: 'शेअर करणे थांबवा', gu: 'શેર કરવાનું બંધ કરો' },
+  bl_active: { en: 'Active doctor links', hi: 'चालू डॉक्टर लिंक', mr: 'सुरू डॉक्टर लिंक', gu: 'ચાલુ ડૉક્ટર લિંક' },
+  bl_none_active: { en: 'No active links', hi: 'कोई चालू लिंक नहीं', mr: 'कोणतीही सुरू लिंक नाही', gu: 'કોઈ ચાલુ લિંક નથી' },
+  bl_consent: { en: 'To make a brief for your doctor, allow it first. You can turn it off any time.', hi: 'डॉक्टर के लिए ब्रीफ़ बनाने के लिए पहले अनुमति दें। आप इसे कभी भी बंद कर सकती हैं।', mr: 'डॉक्टरांसाठी ब्रीफ बनवण्यासाठी आधी परवानगी द्या. तुम्ही ते केव्हाही बंद करू शकता.', gu: 'ડૉક્ટર માટે બ્રીફ બનાવવા પહેલા પરવાનગી આપો. તમે તેને ક્યારેય બંધ કરી શકો.' },
+  bl_allow: { en: 'Allow the doctor brief', hi: 'डॉक्टर ब्रीफ़ की अनुमति दें', mr: 'डॉक्टर ब्रीफला परवानगी द्या', gu: 'ડૉક્ટર બ્રીફને પરવાનગી આપો' },
+  bl_pending: { en: 'Rule-out questions and prevention points are pending clinician review.', hi: 'जाँच-सुझाव और रोकथाम के बिंदु चिकित्सक समीक्षा के लिए लंबित हैं।', mr: 'तपासणी-सूचना आणि प्रतिबंधाचे मुद्दे वैद्यकीय तज्ज्ञांच्या समीक्षेसाठी प्रलंबित आहेत.', gu: 'તપાસ-સૂચનો અને નિવારણના મુદ્દા ચિકિત્સક સમીક્ષા માટે બાકી છે.' },
+  bl_no_flags: { en: 'Nothing stands out to rule out from your check-ins so far.', hi: 'अब तक के चेक-इन से जाँच के लिए कुछ ख़ास नहीं दिखता।', mr: 'आतापर्यंतच्या चेक-इनमधून तपासण्यासारखे काही विशेष दिसत नाही.', gu: 'અત્યાર સુધીના ચેક-ઇનમાંથી તપાસવા જેવું કંઈ ખાસ દેખાતું નથી.' },
+  bl_hot_days: { en: 'Hot-flush days', hi: 'हॉट फ़्लैश वाले दिन', mr: 'हॉट फ्लॅशचे दिवस', gu: 'હોટ ફ્લેશના દિવસો' },
+  bl_sleep_days: { en: 'Poor-sleep days', hi: 'ख़राब नींद वाले दिन', mr: 'अपुऱ्या झोपेचे दिवस', gu: 'ખરાબ ઊંઘના દિવસો' },
+  bl_week: { en: 'Wk', hi: 'हफ़्ता', mr: 'आठवडा', gu: 'અઠવાડિયું' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

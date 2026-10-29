@@ -54,16 +54,17 @@ export function composeBrief(args: { rows: LogRow[]; today: string; name: string
     return { week, hotFlashDays: dcount((r) => r.symptom === 'hot_flash' || r.symptom === 'night_sweats'), poorSleepDays: dcount((r) => r.symptom === 'poor_sleep' || r.symptom === 'night_waking'), load: w.reduce((a, r) => a + r.severity, 0) };
   });
 
+  const dn = (n: number) => (lang === 'en' ? `${n} day${n === 1 ? '' : 's'}` : String(n)); // English templates read "on 1 day" / "on 6 days"
   const highlights: string[] = [];
-  if (checkInDays < 5) highlights.push(fill(HIGHLIGHT.few[lang], { n: checkInDays }));
+  if (checkInDays < 5) highlights.push(checkInDays === 1 ? HIGHLIGHT.few1[lang] : fill(HIGHLIGHT.few[lang], { n: checkInDays }));
   const hotDays = days((r) => r.symptom === 'hot_flash' || r.symptom === 'night_sweats');
   if (hotDays) {
     const when = mode(win.filter((r) => (r.symptom === 'hot_flash' || r.symptom === 'night_sweats') && r.time_of_day !== 'unspecified').map((r) => r.time_of_day));
     highlights.push(fill(HIGHLIGHT.hot[lang], { n: hotDays, d: 30, when: when ? fill(HIGHLIGHT.when[lang], { time: TIME_PHRASE[when][lang] }) : '' }));
   }
-  const sleepDays = days((r) => r.symptom === 'poor_sleep' || r.symptom === 'night_waking'); if (sleepDays) highlights.push(fill(HIGHLIGHT.sleep[lang], { n: sleepDays }));
-  const painDays = days((r) => r.symptom === 'joint_pain' || r.symptom === 'muscle_ache'); if (painDays) highlights.push(fill(HIGHLIGHT.pain[lang], { n: painDays }));
-  const moodDays = days((r) => r.symptom === 'low_mood' || r.symptom === 'anxiety'); if (moodDays) highlights.push(fill(HIGHLIGHT.mood[lang], { n: moodDays }));
+  const sleepDays = days((r) => r.symptom === 'poor_sleep' || r.symptom === 'night_waking'); if (sleepDays) highlights.push(fill(HIGHLIGHT.sleep[lang], { n: dn(sleepDays) }));
+  const painDays = days((r) => r.symptom === 'joint_pain' || r.symptom === 'muscle_ache'); if (painDays) highlights.push(fill(HIGHLIGHT.pain[lang], { n: dn(painDays) }));
+  const moodDays = days((r) => r.symptom === 'low_mood' || r.symptom === 'anxiety'); if (moodDays) highlights.push(fill(HIGHLIGHT.mood[lang], { n: dn(moodDays) }));
   const trig = mode(win.map((r) => r.trigger).filter((t) => TRIGGER_NAME[t])); if (trig) highlights.push(fill(HIGHLIGHT.trigger[lang], { t: TRIGGER_NAME[trig][lang] }));
 
   const ro = ruleOutQuestions({ mrs, weeksOfLogs: 4 }).map((q) => ({ id: q.id, question: RULE_OUT_TEXT[q.id]?.q[lang] ?? q.question, because: RULE_OUT_TEXT[q.id]?.because[lang] ?? q.because, reviewed: false as const }));

@@ -94,3 +94,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--peri-deep); out
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: shimmer 3s linear infinite;
 }
+
+@media print {
+  body * { visibility: hidden; }
+  #brief-article, #brief-article * { visibility: visible; }
+  #brief-article { position: fixed; left: 0; top: 0; width: 100%; box-shadow: none; border-radius: 0; }
+}

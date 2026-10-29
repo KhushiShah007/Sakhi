@@ -33,3 +33,7 @@
 - **"Hide in recents" is best effort in a browser**: the page is blanked on blur/hidden, but a web page cannot control what the OS app-switcher snapshots. A native wrapper (Capacitor/TWA with FLAG_SECURE) would be needed for a guarantee.
 - **`/api/session` answers 200 even when nobody is signed in** so anonymous pages (login, family link) never log 401s.
 - **Deleting the account deletes the family links** (people cascade); the audit trail keeps a hashed tombstone.
+- **Brief PDF is English only (Helvetica)**: the doctor copy is always English by spec. Her-language copy is the on-screen view with browser print/save (browsers shape Devanagari/Gujarati correctly; pdfkit without bundled script fonts would not). Bundling Noto fonts into pdfkit is possible later.
+- **Doctor links hold a frozen encrypted snapshot**, expire in 7 days, can be revoked, and die when she withdraws `doctor_brief` consent or deletes her account. Unknown, expired and revoked links answer identically (410).
+- **Timeline covers 4 x 7 days ending today; MRS covers 30 days.** Max severity per item over the window (explainable, to be validated clinically).
+- **PDF page-count bug fixed during visual review**: the count was read after the document flushed (always 0), so the renderer always used its smallest scale. Always look at generated PDFs.

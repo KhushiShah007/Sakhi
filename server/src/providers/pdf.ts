@@ -11,7 +11,8 @@ export function renderBriefPdf(b: BriefData, opts: { compress?: boolean } = {}):
     const chunks: Buffer[] = [];
     doc.on('data', (c: Buffer) => chunks.push(c));
     doc.on('error', reject);
-    doc.on('end', () => resolve({ buf: Buffer.concat(chunks), pages: doc.bufferedPageRange().count }));
+    let pages = 0;
+    doc.on('end', () => resolve({ buf: Buffer.concat(chunks), pages }));
 
     let y = M;
     const f = (n: number) => n * s;
@@ -34,8 +35,8 @@ export function renderBriefPdf(b: BriefData, opts: { compress?: boolean } = {}):
     const top = y;
     doc.font('Helvetica-Bold').fontSize(f(30)).fillColor(INK).text(String(b.total.score), M, top, { continued: true });
     doc.font('Helvetica').fontSize(f(12)).fillColor(SOFT).text(' / 44', { continued: false });
-    doc.roundedRect(M + 110, top + f(8), f(120), f(18), f(9)).fill('#FFDFC3');
-    doc.font('Helvetica-Bold').fontSize(f(9)).fillColor('#B02458').text(b.total.bandLabel, M + 110, top + f(12), { width: f(120), align: 'center' });
+    doc.roundedRect(M + f(78), top + f(10), f(96), f(18), f(9)).fill('#FFDFC3');
+    doc.font('Helvetica-Bold').fontSize(f(9)).fillColor('#B02458').text(b.total.bandLabel, M + f(78), top + f(14), { width: f(96), align: 'center', lineBreak: false });
     // subscale bars to the right
     let by = top;
     for (const sub of b.subscales) {
@@ -57,6 +58,9 @@ export function renderBriefPdf(b: BriefData, opts: { compress?: boolean } = {}):
 
     // timeline
     h(b.headings.timeline);
+    doc.rect(M, y + f(1), f(7), f(7)).fill(ROSE); doc.font('Helvetica').fontSize(f(7.5)).fillColor(SOFT).text('Hot-flush days', M + f(11), y, { lineBreak: false });
+    doc.rect(M + f(86), y + f(1), f(7), f(7)).fill(PERI); doc.text('Poor-sleep days', M + f(97), y, { lineBreak: false });
+    y += f(13);
     const chartH = f(54), base = y + chartH, maxV = Math.max(1, ...b.timeline.flatMap((t) => [t.hotFlashDays, t.poorSleepDays]));
     b.timeline.forEach((t, i) => {
       const gx = M + 14 + i * (W / 4), bw = f(26);
@@ -67,8 +71,6 @@ export function renderBriefPdf(b: BriefData, opts: { compress?: boolean } = {}):
       doc.text(`${t.poorSleepDays}`, gx + bw + f(4), base - hh(t.poorSleepDays) - f(9), { width: bw, align: 'center', lineBreak: false });
       doc.text(`Wk ${t.week}`, gx, base + f(2), { width: bw * 2 + f(4), align: 'center', lineBreak: false });
     });
-    doc.rect(M + W - 150, y, f(7), f(7)).fill(ROSE); doc.font('Helvetica').fontSize(f(7.5)).fillColor(SOFT).text('Hot-flush days', M + W - 140, y - f(0.5), { lineBreak: false });
-    doc.rect(M + W - 150, y + f(11), f(7), f(7)).fill(PERI); doc.text('Poor-sleep days', M + W - 140, y + f(10.5), { lineBreak: false });
     y = base + f(14);
     for (const t of b.highlights) txt('•  ' + t, { size: 8.8, gap: 1 });
 
@@ -96,11 +98,12 @@ export function renderBriefPdf(b: BriefData, opts: { compress?: boolean } = {}):
     // footer
     txt(b.headings.footer, { size: 8, bold: true, color: INK, gap: 0 });
     txt(`${b.headings.source}  Generated ${b.generatedAt.slice(0, 10)}. Wellness companion, not a medical device.`, { size: 7.2, color: SOFT, gap: 0 });
+    pages = doc.bufferedPageRange().count; // must be read before end(): afterwards the buffered pages are gone
     doc.end();
   });
 
   return (async () => {
-    for (const s of [1, 0.93, 0.86, 0.8, 0.74, 0.68]) { const r = await run(s); if (r.pages === 1) return r.buf; }
+    for (const s of [1.3, 1.22, 1.14, 1.07, 1, 0.93, 0.86, 0.8, 0.74, 0.68]) { const r = await run(s); if (r.pages === 1) return r.buf; }
     return (await run(0.62)).buf;
   })();
 }
