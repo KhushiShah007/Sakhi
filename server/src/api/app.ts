@@ -6,7 +6,12 @@ import type { Db } from '../db/index.js';
 import type { LlmProvider } from '../llm/provider.js';
 import { decrypt, encrypt, keyFromEnv } from '../privacy/crypto.js';
 import { confirmEntries, handleUtterance, type ProposedEntry } from '../safety/pipeline.js';
-import { TIMES, TRIGGERS } from '../safety/validate.js';
+import { TIMES, TRIGGERS, violatesOutputPolicy } from '../safety/validate.js';
+import { CARD_TEXT, CARD_TYPES } from '../content/family.js';
+import { SENTENCES, TONES, suggestCard, type Tone } from '../content/translate.js';
+import { detectRedFlags, crisisResponse } from '../safety/redflags.js';
+import { SYMPTOMS } from '../safety/mrs.js';
+import { SYSTEM_PROMPT, models } from '../llm/provider.js';
 import { mrsFromLogs, type ConfirmedLog, type Symptom } from '../safety/mrs.js';
 import { next20Years, ruleOutQuestions } from '../safety/ruleout.js';
 import { messengerFromEnv, registerFamily, type Messenger } from './family.js';
@@ -216,6 +221,41 @@ export async function buildApp({ db, llm, env = process.env, now = () => new Dat
     if (r.kind === 'crisis') return r;
     if (r.kind === 'refusal') return { kind: 'refusal', message: r.message };
     return { kind: 'reply', symptoms: r.proposals.map((p) => ({ symptom: p.symptom, severity: p.severity, mrsItem: p.mrsItem, time: p.time, trigger: p.trigger })) };
+  });
+
+  /** The fixed Signal Card library with each card's text in every language, so the app can preview exactly what a person will see. */
+  app.get('/api/cards', guarded, async () => ({ cards: CARD_TYPES.map((type) => ({ type, text: CARD_TEXT[type] })) }));
+
+  /**
+   * "Say it for me": three calm first-person sentences for HER to play aloud or copy, plus the enumerated card that fits.
+   * Red flags first. The sentences come from a fixed library; with an LLM key Claude may rephrase them, and anything that
+   * fails validation falls back to the library. Nothing here is sent to anyone: sending is a separate tap (POST /api/signals).
+   */
+  app.post('/api/translate', guarded, async (req, reply) => {
+    const b = z.object({ text: z.string().max(2000).optional(), symptoms: z.array(z.enum(SYMPTOMS)).max(16).default([]), card: z.enum(CARD_TYPES).optional(), lang: langSchema.optional() }).strict().safeParse(req.body);
+    if (!b.success) return bad(reply, b.error);
+    const userId = req.auth!.userId;
+    if (limited(`tr:${userId}`, 30, 60_000)) return reply.code(429).send({ error: 'rate_limited' });
+    const lang = b.data.lang ?? ((await db.query<{ lang: Lang }>('SELECT lang FROM users WHERE id=$1', [userId]))[0].lang);
+    if (b.data.text) { const hits = detectRedFlags(b.data.text); if (hits.length) return crisisResponse(hits, lang, env); }
+    const card = b.data.card ?? suggestCard(b.data.symptoms);
+    let tones: Record<Tone, string> = { gentle: SENTENCES[card].gentle[lang], direct: SENTENCES[card].direct[lang], light: SENTENCES[card].light[lang] };
+    let source: 'library' | 'llm' = 'library';
+    if (llm && b.data.text) {
+      try {
+        const raw = await llm.complete({
+          model: models(env).chat, maxTokens: 400,
+          system: `${SYSTEM_PROMPT}
+Rewrite the user's feeling as ONE calm first-person sentence in three tones. Language code: ${lang}. Max 25 words each. No blame, no names, no private details, no medical claims. Return ONLY JSON {"gentle":"","direct":"","light":""}. The family will not see this text; she will say or copy it herself.`,
+          user: `<user_utterance>${b.data.text}</user_utterance>`,
+        });
+        const j = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)) as Record<string, unknown>;
+        const out = z.object({ gentle: z.string().min(5).max(220), direct: z.string().min(5).max(220), light: z.string().min(5).max(220) }).strict().parse(j);
+        if (TONES.every((t) => !violatesOutputPolicy(out[t]))) { tones = out; source = 'llm'; }
+      } catch { /* library fallback */ }
+    }
+    await audit(userId, 'system', 'translate', `card:${card}`); // metadata only
+    return { kind: 'ok', card, tones, source };
   });
 
   app.post('/api/logs/confirm', guarded, async (req, reply) => {

@@ -4,7 +4,9 @@ import { ArrowDown, Check, Lock, RefreshCw, Send, Smartphone, Sparkles } from 'l
 import { useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Screen, Segmented, TopBar } from '../components/ui'
-import { useGo, useParam } from '../components/nav'
+import { useEmbedded, useGo, useParam } from '../components/nav'
+import { useLive } from '../api/session'
+import TranslatorLive from './TranslatorLive'
 import { SignalCard, FlyAway } from '../family/cards'
 import { transcript } from '../mock/vent'
 
@@ -13,7 +15,15 @@ const TONE_MSG: Record<Tone, StrKey> = { gentle: 'tr_msg', direct: 'tr_msg_direc
 
 export type TranslatorStage = 'compose' | 'sent'
 
-export default function Translator({ stage: stageProp }: { stage?: TranslatorStage }) {
+/** Live when logged in; demo, screenshots and static hosting keep the scripted version. */
+export default function Translator(props: { stage?: TranslatorStage }) {
+  const live = useLive()
+  const embedded = useEmbedded()
+  const forced = useParam('stage')
+  return live && !embedded && !props.stage && !forced ? <TranslatorLive /> : <TranslatorMock {...props} />
+}
+
+function TranslatorMock({ stage: stageProp }: { stage?: TranslatorStage }) {
   const { t, lang } = useI18n()
   const go = useGo()
   const q = useParam('stage') as TranslatorStage | null

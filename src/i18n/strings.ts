@@ -453,6 +453,30 @@ export const S = {
   rx_6: { en: 'You are safe in this moment. Take one more slow breath.', hi: 'इस पल में आप सुरक्षित हैं। एक और धीमी साँस लें।', mr: 'या क्षणी तुम्ही सुरक्षित आहात. आणखी एक हळू श्वास घ्या.', gu: 'આ ક્ષણે તમે સુરક્ષિત છો. વધુ એક ધીમો શ્વાસ લો.' },
   ci_day1: { en: '1 day checked in this week', hi: 'इस हफ़्ते 1 दिन बात हुई', mr: 'या आठवड्यात 1 दिवस बोललो', gu: 'આ અઠવાડિયે 1 દિવસ વાત થઈ' },
   wx_offline: { en: 'Tomorrow\'s forecast is not available right now.', hi: 'कल का पूर्वानुमान अभी उपलब्ध नहीं है।', mr: 'उद्याचा अंदाज आत्ता उपलब्ध नाही.', gu: 'આવતીકાલની આગાહી હમણાં ઉપલબ્ધ નથી.' },
+
+  // ---- live translator
+  tl_hint: { en: 'Say it yourself: play it in a calm voice, or copy it. Your family only receives the Signal Card below.', hi: 'इसे खुद कहें: शांत आवाज़ में सुनाएँ, या कॉपी करें। परिवार को सिर्फ़ नीचे का सिग्नल कार्ड मिलता है।', mr: 'हे स्वतः सांगा: शांत आवाजात ऐका, किंवा कॉपी करा. कुटुंबाला फक्त खालील सिग्नल कार्ड मिळते.', gu: 'આ જાતે કહો: શાંત અવાજમાં સાંભળો, અથવા કૉપી કરો. પરિવારને ફક્ત નીચેનું સિગ્નલ કાર્ડ મળે છે.' },
+  tl_play: { en: 'Play aloud', hi: 'सुनाएँ', mr: 'ऐका', gu: 'સંભળાવો' },
+  tl_stop: { en: 'Stop', hi: 'रोकें', mr: 'थांबा', gu: 'રોકો' },
+  tl_copy: { en: 'Copy text', hi: 'कॉपी करें', mr: 'कॉपी करा', gu: 'કૉપી કરો' },
+  tl_copied: { en: 'Copied', hi: 'कॉपी हो गया', mr: 'कॉपी झाले', gu: 'કૉપી થયું' },
+  tl_card: { en: 'Which signal fits?', hi: 'कौन-सा संकेत ठीक रहेगा?', mr: 'कोणता संकेत योग्य?', gu: 'કયો સંકેત યોગ્ય?' },
+  tl_no_people: { en: 'Add someone you trust first, so a Signal Card has somewhere to go.', hi: 'पहले किसी भरोसेमंद को जोड़ें, ताकि सिग्नल कार्ड कहीं भेजा जा सके।', mr: 'आधी एखाद्या विश्वासू व्यक्तीला जोडा, म्हणजे सिग्नल कार्ड कुठे तरी पाठवता येईल.', gu: 'પહેલા કોઈ વિશ્વાસુને ઉમેરો, જેથી સિગ્નલ કાર્ડ ક્યાંક મોકલી શકાય.' },
+  tl_add_people: { en: 'Add people', hi: 'लोगों को जोड़ें', mr: 'लोकांना जोडा', gu: 'લોકોને ઉમેરો' },
+  tl_pick_someone: { en: 'Choose at least one person', hi: 'कम से कम एक व्यक्ति चुनें', mr: 'किमान एक व्यक्ती निवडा', gu: 'ઓછામાં ઓછી એક વ્યક્તિ પસંદ કરો' },
+  tl_they_see: { en: 'This is exactly what {name} will see', hi: '{name} को ठीक यही दिखेगा', mr: '{name} ला नेमके हेच दिसेल', gu: '{name}ને બરાબર આ જ દેખાશે' },
+  tl_sent_to: { en: 'Sent. They see this card, not your words.', hi: 'भेज दिया। उन्हें यह कार्ड दिखेगा, आपके शब्द नहीं।', mr: 'पाठवले. त्यांना हे कार्ड दिसेल, तुमचे शब्द नाही.', gu: 'મોકલ્યું. તેમને આ કાર્ડ દેખાશે, તમારા શબ્દો નહીં.' },
+  tl_status_sent: { en: 'Sent on WhatsApp', hi: 'WhatsApp पर भेजा', mr: 'WhatsApp वर पाठवले', gu: 'WhatsApp પર મોકલ્યું' },
+  tl_status_link: { en: 'Waiting on their link', hi: 'उनके लिंक पर तैयार', mr: 'त्यांच्या लिंकवर तयार', gu: 'તેમની લિંક પર તૈયાર' },
+  tl_status_failed: { en: 'Could not send', hi: 'भेज नहीं पाए', mr: 'पाठवता आले नाही', gu: 'મોકલી શક્યા નહીં' },
+  tl_done_home: { en: 'Back to home', hi: 'होम पर लौटें', mr: 'होमवर परत', gu: 'હોમ પર પાછા' },
+  tl_card_need_space: { en: 'Need space', hi: 'थोड़ी जगह चाहिए', mr: 'थोडी मोकळीक हवी', gu: 'થોડી જગ્યા જોઈએ' },
+  tl_card_overwhelmed: { en: 'Overwhelmed', hi: 'बहुत दबाव है', mr: 'खूप दडपण आहे', gu: 'બહુ દબાણ છે' },
+  tl_card_rough_night: { en: 'Rough night', hi: 'रात मुश्किल रही', mr: 'रात्र कठीण गेली', gu: 'રાત મુશ્કેલ રહી' },
+  tl_card_take_over_dinner: { en: 'Take over dinner', hi: 'खाना आप संभालें', mr: 'जेवण तुम्ही सांभाळा', gu: 'જમવાનું તમે સંભાળો' },
+  tl_card_just_sit_with_me: { en: 'Just sit with me', hi: 'बस पास बैठें', mr: 'फक्त जवळ बसा', gu: 'બસ પાસે બેસો' },
+  tl_thinking: { en: 'Finding the right words…', hi: 'सही शब्द ढूँढ रही हूँ…', mr: 'योग्य शब्द शोधत आहे…', gu: 'સાચા શબ્દો શોધી રહી છું…' },
+  tl_your_words: { en: 'What you said', hi: 'आपने जो कहा', mr: 'तुम्ही जे सांगितले', gu: 'તમે જે કહ્યું' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

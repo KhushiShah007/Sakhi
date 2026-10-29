@@ -26,3 +26,6 @@
 - **The API serves the built web app** (same origin) so the family link, cookies and CSRF need no CORS configuration. Hash routes mean only `/` needs `index.html`.
 - **Bodyless requests with a JSON content-type are accepted** (treated as no body); malformed JSON is a 400. Browsers and fetch wrappers do this routinely.
 - **Revoked/paused links return HTTP 410**; browsers log that as a console error in dev tools, which is expected and intended.
+- **"Say it for me" never sends the calm sentence to the family.** The three-tone sentence is for her to play aloud (browser voice) or copy and say herself. The only thing that travels through Sakhi's family channel is the enumerated Signal Card, so "family never sees her words" holds even for rewrites. The card is suggested by rules from her confirmed symptoms and she can change it.
+- **Screens that mount two stages do not use AnimatePresence exit waits when a shared-layout child (the tone selector pill) is present**: it left the "sent" screen stuck. Caught by the real-browser test.
+- **Live screens only appear when logged in**; demo, screenshots and static hosting keep the scripted screens (`useLive()` + `useEmbedded()` + forced-stage params).
