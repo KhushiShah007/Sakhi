@@ -8,19 +8,24 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
     "screenshots": "vite build && node scripts/screenshots.mjs",
-    "record": "vite build && node scripts/record.mjs"
+    "record": "vite build && node scripts/record.mjs",
+    "test": "vitest run",
+    "test:safety": "vitest run server/test/safety.suite.test.ts",
+    "typecheck:server": "tsc -p server/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@fontsource/kalam": "^5.1.0",
     "@fontsource/noto-sans-devanagari": "^5.1.0",
     "@fontsource/noto-sans-gujarati": "^5.1.0",
     "@fontsource/poppins": "^5.1.0",
+    "fastify": "^5.12.7",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
-    "recharts": "^2.13.3"
+    "recharts": "^2.13.3",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
@@ -31,8 +36,10 @@
     "playwright": "^1.48.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
+    "tsx": "^4.23.15",
     "typescript": "~5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
   },
   "allowScripts": {
     "esbuild@0.21.5": true
