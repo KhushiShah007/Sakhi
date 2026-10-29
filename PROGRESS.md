@@ -59,6 +59,6 @@ Honest status. The full brief is far larger than one session; this file says exa
 - [ ] Web Push + check-in reminders + Symptom Weather alerts (VAPID); the monthly Letter job exists, no other scheduler
 - [ ] Seed script, `/demo` against the live API, Hindi + English screenshot run against the live app, `npm run eval:speech`
 - [ ] Server speech-to-text providers (Sarvam/Google/Whisper): only the browser Web Speech API is used (typed fallback always works). Server TTS (ElevenLabs) exists, untried against the real API.
-- [ ] CI is written but unverified on GitHub; no scheduled retention deletion
+- [ ] CI is written but unverified on GitHub; retention job built (see PRIVACY.md)
 - [ ] Lighthouse/accessibility audit (not run), 1440px visual pass of the live app
 - [ ] v1.0.0 tag (not tagged: the app is not complete)
