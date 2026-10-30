@@ -44,10 +44,16 @@ for (const mode of ['no-words', 'no-audio']) {
   }, mode)
   const page = await ctx.newPage(); await page.goto(B + '/?lang=en#/vent'); await page.getByRole('textbox').waitFor()
   await page.getByRole('button', { name: /Tap & speak/ }).click()
-  await page.getByTestId('mic-hint').waitFor({ timeout: 15000 })
-  const msg = await page.getByTestId('mic-hint').innerText()
-  ok(`${mode}: she is told what is wrong instead of sitting in silence`, mode === 'no-words' ? /no words are coming through/.test(msg) : /not getting any sound/.test(msg), msg.slice(0, 60))
-  await page.getByRole('button', { name: 'Type instead' }).click()
+  if (mode === 'no-words') {
+    // sound but no words = the browser's speech service is not answering: Sakhi takes over by recording (this test browser has no microphone, so it says so)
+    await page.waitForFunction(() => document.querySelector('[data-testid=stop-recording]') || document.querySelector('[data-testid=mic-help]'), null, { timeout: 15000 })
+    ok(`${mode}: Sakhi switches to recording (or says why it cannot) instead of sitting in silence`, true)
+  } else {
+    await page.getByTestId('mic-hint').waitFor({ timeout: 15000 })
+    const msg = await page.getByTestId('mic-hint').innerText()
+    ok(`${mode}: she is told what is wrong instead of sitting in silence`, /not getting any sound/.test(msg), msg.slice(0, 60))
+    await page.getByRole('button', { name: 'Type instead' }).click()
+  }
   await page.getByRole('textbox').fill('hot flashes and tired')
   ok(`${mode}: and can type straight away`, (await page.getByRole('textbox').inputValue()) === 'hot flashes and tired')
   await ctx.close()

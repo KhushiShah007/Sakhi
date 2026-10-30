@@ -10,7 +10,8 @@ import { Avatar } from '../illustrations/Woman'
 import { scenarios } from '../mock/content'
 import { local, type Feedback, type SessionFull, type SessionItem, type TurnResult } from '../offline/localRehearsal'
 import type { Scenario } from '../offline/engine'
-import { speak, stopSpeaking, useListen } from '../voice/speech'
+import { speak, stopSpeaking } from '../voice/speech'
+import { useVoiceInput } from '../voice/input'
 
 const ICON = { family: HeartHandshake, hr: Briefcase, doctor: Stethoscope }
 interface Msg { who: 'me' | 'them'; text: string }
@@ -30,7 +31,7 @@ const SC_KEY: Record<Scenario, StrKey> = { family: 'rh_family', hr: 'rh_hr', doc
 export default function RehearsalChat({ offline = false }: { offline?: boolean }) {
   const { t, lang } = useI18n()
   const rh = offline ? local : online
-  const listener = useListen(lang)
+  const listener = useVoiceInput(lang)
   const [sid, setSid] = useState<Scenario>('family')
   const [view, setView] = useState<'start' | 'chat'>('start')
   const [session, setSession] = useState<{ id: string; scenario: Scenario; ended: boolean } | null>(null)

@@ -7,7 +7,8 @@ import { api, ApiError } from '../api/client'
 import { clearHandoff, setHandoff } from '../api/handoff'
 import { Orb, Screen, TopBar, Waveform } from '../components/ui'
 import { useGo } from '../components/nav'
-import { SPEECH_LANG, speak, stopSpeaking, useListen } from '../voice/speech'
+import { SPEECH_LANG, speak, stopSpeaking } from '../voice/speech'
+import { useVoiceInput } from '../voice/input'
 import { useElapsed, useMicLevel } from '../voice/level'
 import { localCall } from '../offline/localVent'
 import VoiceNote from '../components/VoiceNote'
@@ -50,7 +51,7 @@ function LevelMeter({ level, secs, label }: { level: number; secs: number; label
 export default function VentLive({ local = false }: { local?: boolean }) {
   const { t, lang } = useI18n()
   const go = useGo()
-  const listener = useListen(lang)
+  const listener = useVoiceInput(lang)
   // without a server the same rules run in the browser and entries are kept on this device
   const call = local ? localCall : api
   const [stage, setStage] = useState<Stage>('idle')
@@ -66,8 +67,10 @@ export default function VentLive({ local = false }: { local?: boolean }) {
   const reqId = useRef(0)
   const text = listener.text
   const live = stage === 'listen' && listener.listening
-  const meter = useMicLevel(live)
-  const level = Math.max(meter, live && listener.hearing ? 0.55 : 0)
+  const meter = useMicLevel(live && listener.mode === 'browser')
+  const level = Math.max(meter, listener.level, live && listener.hearing ? 0.55 : 0)
+  const recording = listener.mode === 'record'
+  const busy = listener.phase === 'transcribing'
   const secs = useElapsed(live)
 
   const showCrisis = (c: Crisis) => { listener.stop(); setCrisis(c); setStage('crisis'); speak(c.message, lang) }
@@ -98,6 +101,8 @@ export default function VentLive({ local = false }: { local?: boolean }) {
   }
 
   const submit = async () => {
+    // after recording, the words are written out first and she checks them before they are sent
+    if (recording && listener.listening) { await listener.finish(); setStage('listen'); return }
     const said = (listener.listening ? await listener.finish() : text).trim()
     if (!said) return
     setErr(null); setNoneFound(false); setStage('sending')
@@ -161,14 +166,21 @@ export default function VentLive({ local = false }: { local?: boolean }) {
               <textarea
                 aria-label={t('vent_heard')}
                 value={text}
-                readOnly={live || stage === 'sending'}
+                readOnly={live || busy || stage === 'sending'}
                 onChange={(e) => listener.setText(e.target.value)}
                 maxLength={2000}
                 rows={5}
-                placeholder={stage === 'idle' && !typing ? t('vent_idle') : t('vl_ph')}
+                placeholder={live && recording ? t('vl_rec') : busy ? t('vl_writing') : stage === 'idle' && !typing ? t('vent_idle') : t('vl_ph')}
                 className="min-h-[120px] w-full resize-none bg-transparent text-[17px] leading-relaxed text-ink outline-none placeholder:text-ink-soft"
               />
             </div>
+            {recording && listener.switched && stage === 'idle' && !live && <p role="status" data-testid="stt-switched" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('vl_switched')}</p>}
+            {busy && <p role="status" data-testid="stt-busy" className="mt-3 rounded-2xl bg-white/80 px-4 py-3 text-[15px] leading-snug text-ink">{listener.progress?.phase === 'download' ? (listener.progress.pct != null ? t('vl_getting_pct', { p: listener.progress.pct }) : t('vl_getting')) : t('vl_writing')}</p>}
+            {listener.sttError && !busy && <p role="alert" data-testid="stt-fail" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t('vl_stt_fail')}</p>}
+            {recording && !live && !busy && text.trim() && stage === 'listen' && <p className="mt-3 text-[14.5px] text-ink-soft" data-testid="check-words">{t('vl_check_text')}</p>}
+            {live && recording && (
+              <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => void listener.finish()} data-testid="stop-recording" className="btn-primary mt-4 w-full"><Check size={20} /> {t('vent_done')}</motion.button>
+            )}
             {live && listener.hint && (
               <div role="status" data-testid="mic-hint" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">
                 <p>{t(listener.hint === 'no_audio' ? 'mic_no_audio' : 'mic_no_words')}</p>
@@ -181,7 +193,7 @@ export default function VentLive({ local = false }: { local?: boolean }) {
             {noneFound && <p role="status" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('vl_none')}</p>}
             {listener.error && !live && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t(micKey(listener.error))}</p>}
             {err && <p role="alert" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t(err)}</p>}
-            {text.trim() && stage !== 'sending' && (
+            {text.trim() && stage !== 'sending' && !busy && !(live && recording) && (
               <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => void submit()} className={`mt-4 w-full ${live ? 'btn-ghost' : 'btn-primary'}`}>
                 <Check size={20} /> {t('vent_done')}
               </motion.button>

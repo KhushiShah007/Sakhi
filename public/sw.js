@@ -2,7 +2,7 @@
  * - App shell and built assets are cached so the app opens, and Right Now / 3 AM work, with no network.
  * - NOTHING under /api, /f, /b, /l or /webhooks is ever cached: health data and links never sit in a cache.
  * - Bump VERSION to drop old caches. */
-const VERSION = 'sakhi-v2'
+const VERSION = 'sakhi-v3'
 const NEVER = /\/(api|f|b|l|webhooks|healthz)(\/|$)/
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(['./', './favicon.svg', './manifest.webmanifest']).catch(() => {})).then(() => self.skipWaiting())) })

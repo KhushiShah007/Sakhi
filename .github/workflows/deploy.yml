@@ -14,28 +14,35 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-# Runs only after Pages is enabled (Settings > Pages > Source: GitHub Actions) and a repo variable PAGES_ENABLED=true is set.
+# Publishes the static site (Vent and Rehearsal run in the browser, saved on the device). It switches itself on once Pages is enabled in
+# Settings > Pages > Source: "GitHub Actions". Until then the build is skipped quietly instead of failing every push.
 jobs:
   build:
-    if: ${{ vars.PAGES_ENABLED == 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.pages.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+      - if: steps.pages.outcome == 'success'
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.pages.outcome == 'success'
+        run: npm ci
+      - if: steps.pages.outcome == 'success'
+        run: npm run build
+      - if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

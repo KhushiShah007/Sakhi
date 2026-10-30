@@ -130,6 +130,6 @@ at *configure-pages*, open **Settings → Pages** in the repo and set **Source: 
 |---|---|---|
 | Chrome / Edge, desktop and Android | Yes (needs https or localhost; Marathi/Gujarati depend on the device, otherwise it listens in Hindi) | Yes, if the device has a voice for the language |
 | Safari, iOS | Partial / varies | Yes, device voices |
-| Firefox, Brave | No: typing only (the app says so) | Yes, device voices |
+| Firefox, Brave | No live recognition: Sakhi records and writes it out on the device (first use downloads about 80 MB) | Yes, device voices |
 
-If a device has no voice for a language, Sakhi shows the words on screen and says why, instead of staying silent. Voice can be switched off in Me.
+If the browser's speech service cannot be reached (the "network" error), Sakhi switches to recording and writing it out on the device automatically. If a device has no voice for a language, Sakhi shows the words on screen and says why, instead of staying silent. Voice can be switched off in Me.
