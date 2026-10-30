@@ -34,7 +34,10 @@ jobs:
           eval "$(node -e "const k=require('web-push').generateVAPIDKeys();console.log('export VAPID_PUBLIC_KEY='+k.publicKey+' VAPID_PRIVATE_KEY='+k.privateKey)")"
           (npx tsx server/src/index.ts > server.log 2>&1 &)
           for i in $(seq 1 40); do curl -sf localhost:8787/healthz && break; sleep 1; done
+      - name: static preview of the built site (no API), for the offline-mode checks
+        run: (npx vite preview --port 4173 > preview.log 2>&1 &) ; for i in $(seq 1 30); do curl -sf localhost:4173 >/dev/null && break; sleep 1; done
       - run: npm run e2e:live
+        env: { STATIC_URL: 'http://localhost:4173' }
       - if: failure()
         run: cat server.log
       - if: always()

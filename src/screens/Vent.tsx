@@ -5,7 +5,7 @@ import { LANGS, useI18n } from '../i18n'
 import type { StrKey } from '../i18n/strings'
 import { Orb, Screen, TopBar, Waveform } from '../components/ui'
 import { useEmbedded, useGo, useParam } from '../components/nav'
-import { useLive } from '../api/session'
+import { useLive, useSession } from '../api/session'
 import VentLive from './VentLive'
 import { detected, transcript, type Detected } from '../mock/vent'
 
@@ -46,7 +46,12 @@ export default function Vent(props: { stage?: VentStage }) {
   const live = useLive()
   const embedded = useEmbedded()
   const forced = useParam('stage')
-  return live && !embedded && !props.stage && !forced ? <VentLive /> : <VentMock {...props} />
+  const { status } = useSession()
+  if (embedded || props.stage || forced) return <VentMock {...props} />
+  if (live) return <VentLive />
+  // static hosting / no API: the real microphone and the same safety rules run in the browser, kept on this device
+  if (status === 'offline' || status === 'netdown') return <VentLive local />
+  return <VentMock {...props} />
 }
 
 function VentMock({ stage: stageProp }: { stage?: VentStage }) {

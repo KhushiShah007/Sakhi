@@ -7,7 +7,10 @@ import { api, ApiError } from '../api/client'
 import { clearHandoff, setHandoff } from '../api/handoff'
 import { Orb, Screen, TopBar, Waveform } from '../components/ui'
 import { useGo } from '../components/nav'
-import { speak, stopSpeaking, useListen } from '../voice/speech'
+import { SPEECH_LANG, speak, stopSpeaking, useListen } from '../voice/speech'
+import { useElapsed, useMicLevel } from '../voice/level'
+import { localCall } from '../offline/localVent'
+import VoiceNote from '../components/VoiceNote'
 
 /** Live Vent Mode: voice (or typed) -> rules + extraction -> she confirms every entry -> saved -> warm reflection. */
 type Stage = 'idle' | 'listen' | 'sending' | 'confirm' | 'reflect' | 'crisis' | 'refusal'
@@ -25,10 +28,31 @@ const symKey = (s: string) => `sy_${s}` as StrKey
 const trgKey = (s: string) => `trg_${s}` as StrKey
 const mrsLabel = (item: string | null) => (item && MRS_NO[item] ? `MRS ${MRS_NO[item]}` : '')
 
-export default function VentLive() {
+const micKey = (e: string): StrKey =>
+  e === 'not-allowed' || e === 'service-not-allowed' ? 'mic_denied' : e === 'no-speech' ? 'mic_none' : e === 'network' ? 'mic_net' : e === 'insecure' ? 'mic_insecure' : e === 'unsupported' ? 'mic_unsupported' : 'mic_other'
+
+/** Live input level and a running timer, so she can see Sakhi is listening. */
+function LevelMeter({ level, secs, label }: { level: number; secs: number; label: string }) {
+  const bars = 28
+  return (
+    <div className="mb-2 flex items-center gap-3" data-testid="level-meter">
+      <div className="flex h-[30px] flex-1 items-center justify-center gap-[3px]" aria-hidden>
+        {Array.from({ length: bars }, (_, i) => {
+          const shape = 0.45 + 0.55 * Math.abs(Math.sin(i * 1.3))
+          return <span key={i} className="w-[3.5px] rounded-full bg-rose transition-[height] duration-100" style={{ height: 4 + 26 * Math.min(1, level * 1.4) * shape }} />
+        })}
+      </div>
+      <span className="min-w-[44px] text-right text-[14px] font-semibold tabular-nums text-ink-soft" aria-label={label}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</span>
+    </div>
+  )
+}
+
+export default function VentLive({ local = false }: { local?: boolean }) {
   const { t, lang } = useI18n()
   const go = useGo()
   const listener = useListen(lang)
+  // without a server the same rules run in the browser and entries are kept on this device
+  const call = local ? localCall : api
   const [stage, setStage] = useState<Stage>('idle')
   const [typing, setTyping] = useState(!listener.supported)
   const [preview, setPreview] = useState<Sym[]>([])
@@ -42,6 +66,8 @@ export default function VentLive() {
   const reqId = useRef(0)
   const text = listener.text
   const live = stage === 'listen' && listener.listening
+  const level = useMicLevel(live)
+  const secs = useElapsed(live)
 
   const showCrisis = (c: Crisis) => { listener.stop(); setCrisis(c); setStage('crisis'); speak(c.message, lang) }
 
@@ -52,7 +78,7 @@ export default function VentLive() {
     const id = ++reqId.current
     const h = window.setTimeout(async () => {
       try {
-        const r = await api<{ kind: string; symptoms?: Sym[]; message?: string; helplines?: Helpline[] }>('POST', '/api/utterance/preview', { text, lang })
+        const r = await call<{ kind: string; symptoms?: Sym[]; message?: string; helplines?: Helpline[] }>('POST', '/api/utterance/preview', { text, lang })
         if (id !== reqId.current) return
         if (r.kind === 'crisis') return showCrisis({ message: r.message!, helplines: r.helplines! })
         setPreview(r.kind === 'reply' ? (r.symptoms ?? []).filter((s, i, a) => a.findIndex((x) => x.symptom === s.symptom) === i).slice(0, 6) : [])
@@ -65,17 +91,17 @@ export default function VentLive() {
   useEffect(() => () => { stopSpeaking() }, [])
 
   const onOrb = () => {
-    if (listener.listening) { listener.stop(); return }
+    if (listener.listening) { void listener.finish(); return }
     if (!listener.supported) { setTyping(true); return }
     setErr(null); setStage('listen'); listener.start()
   }
 
   const submit = async () => {
-    const said = (listener.listening ? listener.stop() : text).trim()
+    const said = (listener.listening ? await listener.finish() : text).trim()
     if (!said) return
     setErr(null); setNoneFound(false); setStage('sending')
     try {
-      const r = await api<{ kind: string; message: string; helplines?: Helpline[]; proposals?: Proposal[]; setId?: string }>('POST', '/api/utterance', { text: said, lang })
+      const r = await call<{ kind: string; message: string; helplines?: Helpline[]; proposals?: Proposal[]; setId?: string }>('POST', '/api/utterance', { text: said, lang })
       if (r.kind === 'crisis') return showCrisis({ message: r.message, helplines: r.helplines! })
       if (r.kind === 'refusal') { setRefusal(r.message); setStage('refusal'); speak(r.message, lang); return }
       setReflection(r.message); setSetId(r.setId!); setProposals(r.proposals!)
@@ -92,7 +118,7 @@ export default function VentLive() {
   const [selection, setSelection] = useState<Record<string, { on: boolean; level: number; trigger: string }>>({})
   const save = async () => {
     try {
-      await api('POST', '/api/logs/confirm', {
+      await call('POST', '/api/logs/confirm', {
         setId,
         decisions: proposals.map((p) => ({ id: p.id, accept: selection[p.id]?.on ?? false, severity: selection[p.id]?.level ?? p.severity, trigger: selection[p.id]?.trigger ?? p.trigger })),
       })
@@ -130,7 +156,7 @@ export default function VentLive() {
                 {live ? <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink-soft"><span className="h-2 w-2 animate-pulse rounded-full bg-rose" /> {t('vent_listening')}</span>
                   : listener.supported && <button onClick={() => setTyping((v) => !v)} className="flex min-h-[40px] items-center gap-1.5 rounded-full px-2 text-[13.5px] font-medium text-ink-soft"><Keyboard size={16} /> {t('vl_type')}</button>}
               </div>
-              <Waveform bars={40} active={live} height={30} className="mb-2" />
+              {live ? <LevelMeter level={level} secs={secs} label={t('vl_listening_for')} /> : <Waveform bars={40} active={false} height={30} className="mb-2" />}
               <textarea
                 aria-label={t('vent_heard')}
                 value={text}
@@ -142,8 +168,11 @@ export default function VentLive() {
                 className="min-h-[120px] w-full resize-none bg-transparent text-[17px] leading-relaxed text-ink outline-none placeholder:text-ink-soft"
               />
             </div>
+            {local && <p data-testid="local-note" className="mt-3 text-center text-[13.5px] text-ink-soft">{t('vl_local')}</p>}
+            {!listener.supported && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('mic_unsupported')}</p>}
+            {listener.usedLang !== SPEECH_LANG[lang] && <p role="status" data-testid="lang-fallback" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('mic_langfb', { l: listener.usedLang === SPEECH_LANG.en ? 'English' : 'हिन्दी' })}</p>}
             {noneFound && <p role="status" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('vl_none')}</p>}
-            {listener.error && !live && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t(listener.error === 'not-allowed' || listener.error === 'service-not-allowed' ? 'mic_denied' : listener.error === 'no-speech' ? 'mic_none' : listener.error === 'network' ? 'mic_net' : 'mic_other')}</p>}
+            {listener.error && !live && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t(micKey(listener.error))}</p>}
             {err && <p role="alert" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t(err)}</p>}
             {text.trim() && stage !== 'sending' && (
               <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => void submit()} className={`mt-4 w-full ${live ? 'btn-ghost' : 'btn-primary'}`}>
@@ -204,6 +233,7 @@ export default function VentLive() {
               <div className="mb-2 flex items-center justify-between"><span className="text-[14px] font-semibold text-rose-pressed">{t('vent_says')}</span>
                 <button aria-label={t('vl_speak')} onClick={() => speak(reflection, lang)} className="grid h-10 w-10 place-items-center rounded-full bg-white/80"><Volume2 size={18} /></button></div>
               <p className="min-h-[110px] text-[18px] leading-relaxed" data-testid="reflection">{reflection}</p>
+              <VoiceNote className="mt-2" />
             </div>
             <button onClick={() => go('/translator')} className="btn-primary mt-5 w-full">{t('vent_yes_say')}</button>
             <div className="mt-3 grid w-full grid-cols-2 gap-3">

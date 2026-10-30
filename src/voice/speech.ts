@@ -174,30 +174,41 @@ export interface Listener {
   text: string
   confidence: number | null
   error: string | null
+  /** The language actually being heard (it can fall back from the one asked for). */
+  usedLang: string
   start: () => void
-  /** Stops and returns the final text. */
+  /** Stops and returns the text so far. */
   stop: () => string
+  /** Stops, waits (briefly) for the recogniser's last final result, then returns the text. */
+  finish: () => Promise<string>
   reset: () => void
   setText: (t: string) => void
 }
+
+/** Requested language first, then Hindi, then Indian English: some devices cannot hear Marathi or Gujarati. */
+export const listenChain = (lang: Lang): string[] => [...new Set([SPEECH_LANG[lang], SPEECH_LANG.hi, SPEECH_LANG.en])]
 
 export function useListen(lang: Lang): Listener {
   const [listening, setListening] = useState(false)
   const [text, setTextState] = useState('')
   const [confidence, setConfidence] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [usedLang, setUsedLang] = useState(SPEECH_LANG[lang])
   const rec = useRef<Rec | null>(null)
   const want = useRef(false)
+  const idx = useRef(0)
+  const restarts = useRef<number[]>([])
+  const waiters = useRef<(() => void)[]>([])
   const finalRef = useRef('')
   const textRef = useRef('')
   const setText = useCallback((t: string) => { textRef.current = t; finalRef.current = t; setTextState(t) }, [])
 
-  const start = useCallback(() => {
+  const begin = useCallback(() => {
     const C = recCtor()
     if (!C) { setError('unsupported'); return }
-    setError(null)
+    const chain = listenChain(lang)
     const r = new C()
-    r.lang = SPEECH_LANG[lang]
+    r.lang = chain[idx.current]
     r.continuous = true
     r.interimResults = true
     r.onresult = (e) => {
@@ -210,16 +221,39 @@ export function useListen(lang: Lang): Listener {
       textRef.current = `${finalRef.current} ${interim}`.trim()
       setTextState(textRef.current)
     }
-    r.onerror = (e) => { want.current = false; setError(e.error); setListening(false) }
-    // browsers end a session after a pause in speech; keep going while she still wants to talk
+    r.onerror = (e) => {
+      // this language is not available on this device: quietly try the next one
+      if (e.error === 'language-not-supported' && idx.current + 1 < chain.length) {
+        idx.current++; setUsedLang(chain[idx.current]); rec.current = null
+        try { begin(); return } catch { /* fall through to the error */ }
+      }
+      want.current = false; setError(e.error); setListening(false)
+    }
+    // browsers end a session after a pause in speech; keep going while she still wants to talk, but never in a tight loop
     r.onend = () => {
-      if (want.current && rec.current === r) { try { r.start(); return } catch { /* fall through */ } }
+      if (rec.current !== r) return
+      if (want.current) {
+        const now = Date.now()
+        restarts.current = restarts.current.filter((t) => now - t < 3000).concat(now)
+        if (restarts.current.length > 4) { want.current = false; setError('restart_loop') }
+        else { try { r.start(); return } catch { want.current = false } }
+      }
       setListening(false)
+      const w = waiters.current; waiters.current = []; w.forEach((f) => f())
     }
     rec.current = r
-    want.current = true
     try { r.start(); setListening(true) } catch { want.current = false; setError('start_failed') }
   }, [lang])
+
+  /** Must be called straight from a tap (no await before it), or mobile Chrome refuses to start the microphone. */
+  const start = useCallback(() => {
+    stopAll()                        // never let Sakhi's own voice hold the audio while she is about to speak
+    if (typeof window !== 'undefined' && window.isSecureContext === false) { setError('insecure'); return }
+    setError(null)
+    idx.current = 0; restarts.current = []; setUsedLang(SPEECH_LANG[lang])
+    want.current = true
+    begin()
+  }, [begin, lang])
 
   const stop = useCallback(() => {
     want.current = false
@@ -227,8 +261,20 @@ export function useListen(lang: Lang): Listener {
     setListening(false)
     return textRef.current
   }, [])
+  const finish = useCallback((): Promise<string> => {
+    want.current = false
+    const r = rec.current
+    if (!r) { setListening(false); return Promise.resolve(textRef.current) }
+    return new Promise((resolve) => {
+      let done = false
+      const fin = () => { if (done) return; done = true; setListening(false); resolve(textRef.current) }
+      waiters.current.push(fin)
+      window.setTimeout(fin, 600) // some engines never send onend after stop()
+      try { r.stop() } catch { fin() }
+    })
+  }, [])
   const reset = useCallback(() => { finalRef.current = ''; textRef.current = ''; setTextState(''); setConfidence(null); setError(null) }, [])
 
   useEffect(() => () => { want.current = false; rec.current?.abort(); stopSpeaking() }, [])
-  return { supported: sttSupported(), listening, text, confidence, error, start, stop, reset, setText }
+  return { supported: sttSupported(), listening, text, confidence, error, usedLang, start, stop, finish, reset, setText }
 }

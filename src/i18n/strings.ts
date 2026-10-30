@@ -652,6 +652,13 @@ export const S = {
   rn_idle_done: { en: 'Done', hi: 'पूरा हुआ', mr: 'पूर्ण', gu: 'પૂર્ણ' },
   vn_none: { en: 'Voice is not available on this device, so Sakhi is showing the words instead.', hi: 'इस डिवाइस पर आवाज़ उपलब्ध नहीं है, इसलिए सखी शब्द दिखा रही है।', mr: 'या डिव्हाइसवर आवाज उपलब्ध नाही, म्हणून सखी शब्द दाखवत आहे.', gu: 'આ ડિવાઇસ પર અવાજ ઉપલબ્ધ નથી, તેથી સખી શબ્દો બતાવી રહી છે.' },
   vn_settings: { en: 'Voice settings', hi: 'आवाज़ की सेटिंग', mr: 'आवाज सेटिंग', gu: 'અવાજ સેટિંગ' },
+
+  // ---- vent: microphone help, offline mode
+  mic_insecure: { en: 'The microphone needs a secure page (https or localhost). Please type below, or open the app at its secure address.', hi: 'माइक्रोफ़ोन के लिए सुरक्षित पेज चाहिए (https या localhost)। कृपया नीचे लिखें, या ऐप को उसके सुरक्षित पते पर खोलें।', mr: 'मायक्रोफोनसाठी सुरक्षित पेज हवे (https किंवा localhost). कृपया खाली लिहा, किंवा ॲप सुरक्षित पत्त्यावर उघडा.', gu: 'માઇક્રોફોન માટે સુરક્ષિત પેજ જોઈએ (https અથવા localhost). કૃપા કરીને નીચે લખો, અથવા ઍપ સુરક્ષિત સરનામે ખોલો.' },
+  mic_unsupported: { en: 'This browser cannot listen (Chrome or Edge can). You can type instead.', hi: 'यह ब्राउज़र सुन नहीं सकता (Chrome या Edge सुन सकते हैं)। आप लिख सकती हैं।', mr: 'हा ब्राउझर ऐकू शकत नाही (Chrome किंवा Edge ऐकू शकतात). तुम्ही लिहू शकता.', gu: 'આ બ્રાઉઝર સાંભળી શકતું નથી (Chrome અથવા Edge સાંભળી શકે). તમે લખી શકો છો.' },
+  mic_langfb: { en: 'Your language could not be heard on this device, so I am listening in {l}.', hi: 'आपकी भाषा इस डिवाइस पर सुनी नहीं जा सकी, इसलिए मैं {l} में सुन रही हूँ।', mr: 'तुमची भाषा या डिव्हाइसवर ऐकता आली नाही, म्हणून मी {l} मध्ये ऐकत आहे.', gu: 'તમારી ભાષા આ ડિવાઇસ પર સાંભળી શકાઈ નહીં, તેથી હું {l}માં સાંભળી રહી છું.' },
+  vl_local: { en: 'Saved on this device only. Nothing is sent anywhere.', hi: 'केवल इसी डिवाइस पर सहेजा जाता है। कुछ भी कहीं नहीं भेजा जाता।', mr: 'फक्त याच डिव्हाइसवर साठवले जाते. काहीही कुठेही पाठवले जात नाही.', gu: 'ફક્ત આ ડિવાઇસ પર સચવાય છે. કંઈ ક્યાંય મોકલાતું નથી.' },
+  vl_listening_for: { en: 'Listening', hi: 'सुन रही हूँ', mr: 'ऐकत आहे', gu: 'સાંભળી રહી છું' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S
