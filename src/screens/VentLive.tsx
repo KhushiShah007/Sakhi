@@ -66,7 +66,8 @@ export default function VentLive({ local = false }: { local?: boolean }) {
   const reqId = useRef(0)
   const text = listener.text
   const live = stage === 'listen' && listener.listening
-  const level = useMicLevel(live)
+  const meter = useMicLevel(live)
+  const level = Math.max(meter, live && listener.hearing ? 0.55 : 0)
   const secs = useElapsed(live)
 
   const showCrisis = (c: Crisis) => { listener.stop(); setCrisis(c); setStage('crisis'); speak(c.message, lang) }
@@ -168,6 +169,12 @@ export default function VentLive({ local = false }: { local?: boolean }) {
                 className="min-h-[120px] w-full resize-none bg-transparent text-[17px] leading-relaxed text-ink outline-none placeholder:text-ink-soft"
               />
             </div>
+            {live && listener.hint && (
+              <div role="status" data-testid="mic-hint" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">
+                <p>{t(listener.hint === 'no_audio' ? 'mic_no_audio' : 'mic_no_words')}</p>
+                <button onClick={() => { void listener.finish(); setTyping(true) }} className="mt-2 min-h-[44px] rounded-full bg-white/80 px-4 text-[14.5px] font-semibold text-ink">{t('vl_type_now')}</button>
+              </div>
+            )}
             {local && <p data-testid="local-note" className="mt-3 text-center text-[13.5px] text-ink-soft">{t('vl_local')}</p>}
             {!listener.supported && <p role="status" data-testid="mic-help" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('mic_unsupported')}</p>}
             {listener.usedLang !== SPEECH_LANG[lang] && <p role="status" data-testid="lang-fallback" className="mt-3 rounded-2xl bg-[#FFF3C4] px-4 py-3 text-[15px] leading-snug text-[#54656F]">{t('mic_langfb', { l: listener.usedLang === SPEECH_LANG.en ? 'English' : 'हिन्दी' })}</p>}

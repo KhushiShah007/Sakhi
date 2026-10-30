@@ -26,5 +26,31 @@ for (const mode of ['not-allowed', 'no-speech', 'network', 'audio-capture', 'wor
   else { ok(`${mode}: a plain message is shown`, help === 1); await page.getByRole('textbox').fill('typed instead'); ok(`${mode}: typing still works`, (await page.getByRole('button', { name: /Done|Save|Understood|That/i }).count()) > 0) }
   await ctx.close()
 }
+
+// ---- a silent speech service: the recogniser hears sound but never returns words, or never gets audio at all
+for (const mode of ['no-words', 'no-audio']) {
+  const phone = '+9181' + String(Math.floor(Math.random() * 1e8)).padStart(8, '0')
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  await ctx.request.post(B + '/api/auth/otp/request', { data: { phone } })
+  const csrf = (await (await ctx.request.post(B + '/api/auth/otp/verify', { data: { phone, code: '123456', birthYear: 1978, lang: 'en' } })).json()).csrf
+  await ctx.request.post(B + '/api/consents', { data: { purpose: 'core_logging', granted: true }, headers: { 'x-csrf-token': csrf } })
+  await ctx.request.patch(B + '/api/me', { data: { onboarded: true, name: 'S' }, headers: { 'x-csrf-token': csrf } })
+  await ctx.addInitScript((mode) => {
+    const R = class {
+      start() { if (mode === 'no-words') setTimeout(() => { this.onaudiostart && this.onaudiostart(); this.onspeechstart && this.onspeechstart() }, 100) }
+      stop() { setTimeout(() => this.onend && this.onend(), 20) } abort() {}
+    }
+    window.SpeechRecognition = R; window.webkitSpeechRecognition = R
+  }, mode)
+  const page = await ctx.newPage(); await page.goto(B + '/?lang=en#/vent'); await page.getByRole('textbox').waitFor()
+  await page.getByRole('button', { name: /Tap & speak/ }).click()
+  await page.getByTestId('mic-hint').waitFor({ timeout: 15000 })
+  const msg = await page.getByTestId('mic-hint').innerText()
+  ok(`${mode}: she is told what is wrong instead of sitting in silence`, mode === 'no-words' ? /no words are coming through/.test(msg) : /not getting any sound/.test(msg), msg.slice(0, 60))
+  await page.getByRole('button', { name: 'Type instead' }).click()
+  await page.getByRole('textbox').fill('hot flashes and tired')
+  ok(`${mode}: and can type straight away`, (await page.getByRole('textbox').inputValue()) === 'hot flashes and tired')
+  await ctx.close()
+}
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED'); process.exit(failed ? 1 : 0)

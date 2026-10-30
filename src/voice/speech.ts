@@ -8,7 +8,7 @@ import { PACE_RATE, getVoicePrefs } from './prefs'
 export const SPEECH_LANG: Record<Lang, string> = { hi: 'hi-IN', mr: 'mr-IN', gu: 'gu-IN', en: 'en-IN' }
 
 interface RecEvent { resultIndex: number; results: { length: number; [i: number]: { isFinal: boolean; 0: { transcript: string; confidence: number } } } }
-interface Rec { lang: string; continuous: boolean; interimResults: boolean; onresult: ((e: RecEvent) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null; start(): void; stop(): void; abort(): void }
+interface Rec { lang: string; continuous: boolean; interimResults: boolean; onresult: ((e: RecEvent) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null; onaudiostart?: (() => void) | null; onspeechstart?: (() => void) | null; onspeechend?: (() => void) | null; start(): void; stop(): void; abort(): void }
 type RecCtor = new () => Rec
 const recCtor = (): RecCtor | null => {
   const w = window as unknown as { SpeechRecognition?: RecCtor; webkitSpeechRecognition?: RecCtor }
@@ -176,6 +176,10 @@ export interface Listener {
   error: string | null
   /** The language actually being heard (it can fall back from the one asked for). */
   usedLang: string
+  /** True while the recogniser reports speech (drives the activity indicator where a real level meter is not safe). */
+  hearing: boolean
+  /** Set when listening but nothing useful is coming through: no microphone audio at all, or sound but no words (speech service blocked or offline). */
+  hint: 'no_audio' | 'no_words' | null
   start: () => void
   /** Stops and returns the text so far. */
   stop: () => string
@@ -194,6 +198,11 @@ export function useListen(lang: Lang): Listener {
   const [confidence, setConfidence] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [usedLang, setUsedLang] = useState(SPEECH_LANG[lang])
+  const [hearing, setHearing] = useState(false)
+  const [hint, setHint] = useState<'no_audio' | 'no_words' | null>(null)
+  const gotAudio = useRef(false)
+  const timers = useRef<number[]>([])
+  const clearTimers = () => { timers.current.forEach((t) => window.clearTimeout(t)); timers.current = [] }
   const rec = useRef<Rec | null>(null)
   const want = useRef(false)
   const idx = useRef(0)
@@ -211,7 +220,11 @@ export function useListen(lang: Lang): Listener {
     r.lang = chain[idx.current]
     r.continuous = true
     r.interimResults = true
+    r.onaudiostart = () => { gotAudio.current = true; setHint((h) => (h === 'no_audio' ? null : h)) }
+    r.onspeechstart = () => setHearing(true)
+    r.onspeechend = () => setHearing(false)
     r.onresult = (e) => {
+      clearTimers(); setHint(null)
       let interim = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i]
@@ -232,6 +245,7 @@ export function useListen(lang: Lang): Listener {
     // browsers end a session after a pause in speech; keep going while she still wants to talk, but never in a tight loop
     r.onend = () => {
       if (rec.current !== r) return
+      setHearing(false)
       if (want.current) {
         const now = Date.now()
         restarts.current = restarts.current.filter((t) => now - t < 3000).concat(now)
@@ -250,19 +264,25 @@ export function useListen(lang: Lang): Listener {
     stopAll()                        // never let Sakhi's own voice hold the audio while she is about to speak
     if (typeof window !== 'undefined' && window.isSecureContext === false) { setError('insecure'); return }
     setError(null)
-    idx.current = 0; restarts.current = []; setUsedLang(SPEECH_LANG[lang])
+    idx.current = 0; restarts.current = []; setUsedLang(SPEECH_LANG[lang]); setHint(null); gotAudio.current = false
+    // if the browser never opens the microphone, or hears sound but returns no words, say so instead of sitting silent
+    clearTimers()
+    timers.current = [
+      window.setTimeout(() => { if (want.current && !gotAudio.current) setHint('no_audio') }, 4000),
+      window.setTimeout(() => { if (want.current && gotAudio.current) setHint('no_words') }, 10000),
+    ]
     want.current = true
     begin()
   }, [begin, lang])
 
   const stop = useCallback(() => {
-    want.current = false
+    want.current = false; clearTimers(); setHearing(false)
     rec.current?.stop()
     setListening(false)
     return textRef.current
   }, [])
   const finish = useCallback((): Promise<string> => {
-    want.current = false
+    want.current = false; clearTimers(); setHearing(false)
     const r = rec.current
     if (!r) { setListening(false); return Promise.resolve(textRef.current) }
     return new Promise((resolve) => {
@@ -275,6 +295,6 @@ export function useListen(lang: Lang): Listener {
   }, [])
   const reset = useCallback(() => { finalRef.current = ''; textRef.current = ''; setTextState(''); setConfidence(null); setError(null) }, [])
 
-  useEffect(() => () => { want.current = false; rec.current?.abort(); stopSpeaking() }, [])
-  return { supported: sttSupported(), listening, text, confidence, error, usedLang, start, stop, finish, reset, setText }
+  useEffect(() => () => { want.current = false; clearTimers(); rec.current?.abort(); stopSpeaking() }, [])
+  return { supported: sttSupported(), listening, text, confidence, error, usedLang, hearing, hint, start, stop, finish, reset, setText }
 }

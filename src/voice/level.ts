@@ -5,10 +5,13 @@ import { useEffect, useState } from 'react'
  * It only measures loudness; the audio is never recorded or sent. If the mic cannot be opened, level stays 0 and the
  * speech recogniser reports the reason separately.
  */
+/** Phones allow only one reader on the microphone: opening a second one can silence the speech recogniser. There the indicator is driven by the recogniser's own speech events instead. */
+export const isMobile = () => typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+
 export function useMicLevel(active: boolean): number {
   const [level, setLevel] = useState(0)
   useEffect(() => {
-    if (!active || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setLevel(0); return }
+    if (!active || isMobile() || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setLevel(0); return }
     let stopped = false
     let raf = 0
     let stream: MediaStream | null = null

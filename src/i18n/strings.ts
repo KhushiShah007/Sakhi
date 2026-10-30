@@ -680,6 +680,11 @@ export const S = {
   rh_back: { en: 'Back', hi: 'वापस', mr: 'मागे', gu: 'પાછા' },
   rh_mic: { en: 'Speak', hi: 'बोलें', mr: 'बोला', gu: 'બોલો' },
   rh_mic_stop: { en: 'Stop speaking', hi: 'बोलना रोकें', mr: 'बोलणं थांबवा', gu: 'બોલવાનું બંધ કરો' },
+
+  // ---- vent: diagnosing a silent microphone
+  mic_no_audio: { en: 'I am not getting any sound from the microphone. Check that the right microphone is selected and allowed, or type below.', hi: 'माइक्रोफ़ोन से कोई आवाज़ नहीं आ रही। जाँचें कि सही माइक्रोफ़ोन चुना है और उसकी अनुमति है, या नीचे लिखें।', mr: 'मायक्रोफोनमधून आवाज येत नाही. योग्य मायक्रोफोन निवडला आहे आणि परवानगी आहे का ते तपासा, किंवा खाली लिहा.', gu: 'માઇક્રોફોનમાંથી અવાજ આવતો નથી. સાચો માઇક્રોફોન પસંદ અને મંજૂર છે કે તે તપાસો, અથવા નીચે લખો.' },
+  mic_no_words: { en: 'I can hear sound but no words are coming through. The speech service may be blocked or offline on this device. Please type below.', hi: 'आवाज़ सुनाई दे रही है पर शब्द नहीं आ रहे। इस डिवाइस पर बोली पहचानने की सेवा बंद या ऑफ़लाइन हो सकती है। कृपया नीचे लिखें।', mr: 'आवाज ऐकू येतो पण शब्द येत नाहीत. या डिव्हाइसवर बोलणे ओळखणारी सेवा बंद किंवा ऑफलाइन असू शकते. कृपया खाली लिहा.', gu: 'અવાજ સંભળાય છે પણ શબ્દો આવતા નથી. આ ડિવાઇસ પર બોલી ઓળખતી સેવા બંધ કે ઑફલાઇન હોઈ શકે. કૃપા કરીને નીચે લખો.' },
+  vl_type_now: { en: 'Type instead', hi: 'इसके बजाय लिखें', mr: 'त्याऐवजी लिहा', gu: 'તેના બદલે લખો' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S
