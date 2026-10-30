@@ -1,0 +1,17 @@
+# Render blueprint for a public DEMO of the full app (sign-in works with any phone number and code 123456; fictional data only).
+# Free plan. Data lives in the container, so it resets whenever the service restarts or redeploys. Do NOT use this for real users:
+# use render.yaml (production: Postgres, real SMS OTP, DEMO_AUTH off) for that.
+services:
+  - type: web
+    name: sakhi-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - { key: NODE_ENV, value: development }   # the image sets production, which forbids demo sign-in; this overrides it for the demo only
+      - { key: DEMO_AUTH, value: "true" }
+      - { key: DEMO_MODE, value: "true" }       # shows a small DEMO badge
+      - { key: SEED_DEMO, value: "true" }       # loads fictional Sunita, her family, and Navrang Textiles on start
+      - { key: ADMIN_KEY, generateValue: true } # admin console key: see it in the service's Environment tab
+      - { key: SAKHI_DATA_KEY, generateValue: true }
+      - { key: RATE_LIMIT_PER_MIN, value: "300" }

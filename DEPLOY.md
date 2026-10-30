@@ -7,7 +7,14 @@ The app is **one Node process**: it serves the web app and the API from the same
 ## Required environment in production
 `NODE_ENV=production`, `DATABASE_URL`, `SAKHI_DATA_KEY` (32 random bytes, base64), `OTP_WEBHOOK_URL` (+ `OTP_WEBHOOK_TOKEN`), `PUBLIC_URL`. Never set `DEMO_AUTH=true` (the server refuses to start). Optional: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, WhatsApp variables, `ADMIN_KEY`. See SETUP.md and `.env.example`.
 
-## Render (about 10 minutes)
+## Render: public demo of the full app (free, about 5 minutes)
+Uses `render-demo.yaml`: sign in with any phone number and the code `123456`, fictional data only, resets when the service restarts. Not for real users.
+1. https://dashboard.render.com/blueprints → **New Blueprint Instance** → connect GitHub → pick the Sakhi repo.
+2. **Blueprint file path**: `render-demo.yaml` → **Apply**. The first build takes about 5-8 minutes.
+3. Open the URL Render shows (`https://sakhi-demo.onrender.com`). Demo login `+919999900001`, code `123456`. HR dashboard code `NAVRANG-HR-DEMO`; admin key is in the service's **Environment** tab (`ADMIN_KEY`).
+4. The free plan sleeps after 15 idle minutes; the next visit takes about 30 seconds to wake.
+
+## Render: production (about 10 minutes)
 1. Push the repo to GitHub.
 2. Render → **New → Blueprint** → pick the repo. `render.yaml` creates the web service (Docker) and a Postgres database and wires `DATABASE_URL`.
 3. In the service's **Environment**, set `SAKHI_DATA_KEY` (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`), `OTP_WEBHOOK_URL`, `OTP_WEBHOOK_TOKEN`, `PUBLIC_URL` (`https://<service>.onrender.com`), and any optional keys.

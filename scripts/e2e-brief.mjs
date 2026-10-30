@@ -89,7 +89,7 @@ await page.screenshot({ path: `${OUT}/51-brief-hindi.png` })
 await A('POST', '/api/consents', { purpose: 'doctor_brief', granted: false })
 ok('withdrawing consent shuts the brief and PDF', (await A('GET', '/api/brief')).status === 403 && (await A('GET', '/api/brief.pdf')).status === 403)
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9]|410)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

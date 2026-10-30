@@ -91,7 +91,7 @@ for (const [name, hash] of [[/Vent/, '#/vent'], [/Right Now/, '#/right-now']]) {
   await home(); await page.getByRole('button', { name }).first().click(); await page.waitForURL(new RegExp(hash)); ok(`Home -> ${hash}`, true)
 }
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9])/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9])/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

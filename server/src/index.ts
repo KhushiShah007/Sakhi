@@ -8,11 +8,14 @@ import { pushFromEnv } from './providers/push.js';
 import { weatherFromEnv } from './providers/weather.js';
 import { sendDueReminders } from './api/reminders.js';
 import { purgeExpired } from './api/retention.js';
+import { seed } from './seed.js';
 import { syncContent } from './api/admin.js';
 
 const db = await dbFromEnv();
 const applied = await migrate(db);
 await syncContent(db); // registers the app's own wording in the clinician-review register (version 1, NOT reviewed)
+// Hosted demo: SEED_DEMO=true loads the fictional demo data (idempotent). Never set this for real users.
+if (process.env.SEED_DEMO === 'true' && process.env.NODE_ENV !== 'production') { const r = await seed(db); console.log(`demo data ready (Sunita ${r.sunitaPhone}, HR code ${r.hrCode})`); }
 const app = await buildApp({ db, llm: llmFromEnv() }); // throws if NODE_ENV=production and DEMO_AUTH=true
 // Monthly letters: idempotent, so an hourly tick means the first run after midnight on the 1st does the work (and a restart catches up).
 const jobKey = keyFromEnv();

@@ -33,5 +33,7 @@ export default defineConfig({
   server: {
     proxy: Object.fromEntries(['/api', '/f', '/b', '/l', '/webhooks', '/healthz'].map((p) => [p, 'http://localhost:8787'])),
   },
+  // `vite preview` must behave like static hosting (no API behind it), so it never inherits the dev proxy above
+  preview: { proxy: {} },
   build: { chunkSizeWarningLimit: 1500 },
 })

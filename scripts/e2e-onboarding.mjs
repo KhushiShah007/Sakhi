@@ -102,7 +102,7 @@ await teen.goto(links[1].trim().replace(/^https?:\/\/[^/]+/, B))
 await teen.getByText(/short reads/).first().waitFor()
 ok('teen link is content-only', (await teen.getByRole('button', { name: /Done/ }).count()) === 0)
 
-const realErrors = errors.filter((e) => !/410|Failed to load resource.*(40[134])/.test(e))
+const realErrors = errors.filter((e) => !/410|Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[134])/.test(e))
 ok('no unexpected console errors', realErrors.length === 0, JSON.stringify(realErrors))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

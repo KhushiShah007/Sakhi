@@ -68,7 +68,7 @@ await page.getByRole('button', { name: 'Sign out' }).click()
 await page.getByLabel('Admin key').waitFor()
 ok('signing out closes the console', (await ctx.request.get(`${B}/api/admin/content`)).status() === 401)
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410|503)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9]|410|503)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

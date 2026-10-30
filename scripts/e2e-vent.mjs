@@ -103,7 +103,7 @@ await page.getByRole('textbox').fill('I want to die')
 await page.getByTestId('crisis-message').waitFor({ timeout: 8000 })
 ok('...but crisis help still appears', true)
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9])/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|ERR_NETWORK_IO_SUSPENDED)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

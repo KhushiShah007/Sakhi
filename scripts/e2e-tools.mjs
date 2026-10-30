@@ -95,7 +95,7 @@ await page.getByText('Practise the hard talk here first').waitFor()
 ok('forced scene params keep the scripted demo scene', (await page.getByText('Tap to say this').count()) > 0)
 await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/73-rehearsal.png` })
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9]|410)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

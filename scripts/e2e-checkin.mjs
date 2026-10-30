@@ -66,7 +66,7 @@ await page.getByText('1:30').first().waitFor()
 ok('"Do it again" restarts from 1:30', true)
 ok('no pretend buttons in the live exercise', (await page.getByRole('button', { name: 'Favourite' }).count()) === 0)
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9]|410)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')

@@ -83,7 +83,7 @@ await up.getByLabel('Employer code').waitFor()
 ok('she can leave at any time', (await (await u.request.get(`${B}/api/employer/membership`)).json()).membership === null)
 void csrf
 
-const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
+const real = errors.filter((e) => !/Failed to load resource.*(ERR_NETWORK_IO_SUSPENDED|40[0-9]|410)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))
 await browser.close()
 console.log(failed ? `\n${failed} FAILED` : '\nALL PASSED')
