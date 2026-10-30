@@ -16,8 +16,25 @@ describe('DEMO_DEPLOY=true', () => {
     const lines = applyDemoDeploy(env);
     expect(env.ADMIN_KEY).toBe('my-own-key'); expect(lines.join(' ')).not.toContain('my-own-key');
   });
-  it('does nothing unless it is exactly "true": production stays strict', () => {
-    for (const v of [undefined, 'false', '1', 'TRUE']) {
+  it('tolerates spaces, quotes and capitals in the value', () => {
+    for (const v of ['true', ' true ', 'TRUE', '"true"', "'true'", 'True', '1', 'yes']) {
+      const env = { NODE_ENV: 'production', DEMO_DEPLOY: v } as NodeJS.ProcessEnv;
+      expect(applyDemoDeploy(env).length, v).toBeGreaterThan(0); expect(env.NODE_ENV).toBe('development');
+    }
+  });
+  it('on Render with no database and no real sign-in it runs as a demo instead of crashing', () => {
+    const env = { RENDER: 'true', NODE_ENV: 'production' } as NodeJS.ProcessEnv;
+    const lines = applyDemoDeploy(env);
+    expect(env.NODE_ENV).toBe('development'); expect(env.DEMO_AUTH).toBe('true'); expect(lines[0]).toMatch(/no DATABASE_URL/);
+  });
+  it('but a real deployment on Render (database or SMS sign-in configured) is never turned into a demo', () => {
+    for (const extra of [{ DATABASE_URL: 'postgres://x' }, { OTP_WEBHOOK_URL: 'https://sms.example' }]) {
+      const env = { RENDER: 'true', NODE_ENV: 'production', ...extra } as NodeJS.ProcessEnv;
+      expect(applyDemoDeploy(env)).toEqual([]); expect(env.NODE_ENV).toBe('production'); expect(env.DEMO_AUTH).toBeUndefined();
+    }
+  });
+  it('does nothing for off values and outside Render: production stays strict', () => {
+    for (const v of [undefined, 'false', '0', 'no', '']) {
       const env = { NODE_ENV: 'production', DEMO_DEPLOY: v } as NodeJS.ProcessEnv;
       expect(applyDemoDeploy(env)).toEqual([]); expect(env.NODE_ENV).toBe('production'); expect(env.DEMO_AUTH).toBeUndefined();
     }
