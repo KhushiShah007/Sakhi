@@ -26,6 +26,7 @@ import { registerIvr } from './ivr.js';
 import { weatherFromEnv, type WeatherProvider } from '../providers/weather.js';
 import { pushFromEnv, type PushProvider } from '../providers/push.js';
 import { registerReminders } from './reminders.js';
+import { registerRehearsal } from './rehearsal.js';
 import { ttsFromEnv, type TtsAudio, type TtsProvider } from '../providers/tts.js';
 
 export const PURPOSES = ['core_logging', 'family_signals', 'doctor_brief', 'employer_aggregate', 'research_atlas', 'store_audio'] as const;
@@ -423,6 +424,7 @@ Rewrite the user's feeling as ONE calm first-person sentence in three tones. Lan
   registerLetters(app, ctx);
   registerNight(app, ctx);
   registerReminders(app, { ...ctx, push });
+  registerRehearsal(app, { ...ctx, llm });
   registerHr(app, ctx);
   registerAdmin(app, ctx);
   registerIvr(app, { ...ctx, phoneHash });

@@ -659,6 +659,27 @@ export const S = {
   mic_langfb: { en: 'Your language could not be heard on this device, so I am listening in {l}.', hi: 'आपकी भाषा इस डिवाइस पर सुनी नहीं जा सकी, इसलिए मैं {l} में सुन रही हूँ।', mr: 'तुमची भाषा या डिव्हाइसवर ऐकता आली नाही, म्हणून मी {l} मध्ये ऐकत आहे.', gu: 'તમારી ભાષા આ ડિવાઇસ પર સાંભળી શકાઈ નહીં, તેથી હું {l}માં સાંભળી રહી છું.' },
   vl_local: { en: 'Saved on this device only. Nothing is sent anywhere.', hi: 'केवल इसी डिवाइस पर सहेजा जाता है। कुछ भी कहीं नहीं भेजा जाता।', mr: 'फक्त याच डिव्हाइसवर साठवले जाते. काहीही कुठेही पाठवले जात नाही.', gu: 'ફક્ત આ ડિવાઇસ પર સચવાય છે. કંઈ ક્યાંય મોકલાતું નથી.' },
   vl_listening_for: { en: 'Listening', hi: 'सुन रही हूँ', mr: 'ऐकत आहे', gu: 'સાંભળી રહી છું' },
+
+  // ---- rehearsal chat
+  rh_start: { en: 'Start rehearsing', hi: 'रिहर्सल शुरू करें', mr: 'रिहर्सल सुरू करा', gu: 'રિહર્સલ શરૂ કરો' },
+  rh_hint: { en: 'Suggest a line', hi: 'एक वाक्य सुझाइए', mr: 'एक वाक्य सुचवा', gu: 'એક વાક્ય સૂચવો' },
+  rh_end: { en: 'End and get feedback', hi: 'खत्म करें और फ़ीडबैक लें', mr: 'संपवा आणि फीडबॅक घ्या', gu: 'પૂરું કરો અને ફીડબેક લો' },
+  rh_mute: { en: 'Turn off the spoken voice', hi: 'बोलकर जवाब बंद करें', mr: 'बोलून उत्तर बंद करा', gu: 'બોલીને જવાબ બંધ કરો' },
+  rh_unmute: { en: 'Turn on the spoken voice', hi: 'बोलकर जवाब चालू करें', mr: 'बोलून उत्तर चालू करा', gu: 'બોલીને જવાબ ચાલુ કરો' },
+  rh_past: { en: 'Past rehearsals', hi: 'पिछली रिहर्सल', mr: 'मागील रिहर्सल', gu: 'અગાઉની રિહર્સલ' },
+  rh_past_none: { en: 'No rehearsals yet. Your practice talks will appear here.', hi: 'अभी कोई रिहर्सल नहीं। आपकी प्रैक्टिस यहाँ दिखेगी।', mr: 'अजून रिहर्सल नाही. तुमचा सराव इथे दिसेल.', gu: 'હજી કોઈ રિહર્સલ નથી. તમારો અભ્યાસ અહીં દેખાશે.' },
+  rh_resume: { en: 'Continue', hi: 'जारी रखें', mr: 'पुढे चालू ठेवा', gu: 'ચાલુ રાખો' },
+  rh_review: { en: 'Review', hi: 'देखें', mr: 'पाहा', gu: 'જુઓ' },
+  rh_delete: { en: 'Delete', hi: 'हटाएँ', mr: 'हटवा', gu: 'કાઢી નાખો' },
+  rh_typing: { en: 'Typing', hi: 'लिख रहे हैं', mr: 'लिहीत आहेत', gu: 'લખી રહ્યા છે' },
+  rh_local: { en: 'Saved on this device only.', hi: 'केवल इसी डिवाइस पर सहेजा जाता है।', mr: 'फक्त याच डिव्हाइसवर साठवले जाते.', gu: 'ફક્ત આ ડિવાઇસ પર સચવાય છે.' },
+  rh_crisis_ok: { en: 'I am okay, continue practice', hi: 'मैं ठीक हूँ, प्रैक्टिस जारी रखें', mr: 'मी ठीक आहे, सराव सुरू ठेवा', gu: 'હું ઠીક છું, અભ્યાસ ચાલુ રાખો' },
+  rh_scene_done: { en: 'The scene is complete. You can end it and get your feedback.', hi: 'सीन पूरा हुआ। आप इसे खत्म करके फ़ीडबैक ले सकती हैं।', mr: 'दृश्य पूर्ण झालं. तुम्ही ते संपवून फीडबॅक घेऊ शकता.', gu: 'દૃશ્ય પૂરું થયું. તમે તેને પૂરું કરીને ફીડબેક લઈ શકો.' },
+  rh_turns: { en: '{n} turns', hi: '{n} बार बोलीं', mr: '{n} वेळा बोललात', gu: '{n} વખત બોલ્યા' },
+  rh_summary: { en: '{p} of {n} checks', hi: '{n} में से {p} जाँच', mr: '{n} पैकी {p} तपासण्या', gu: '{n} માંથી {p} તપાસ' },
+  rh_back: { en: 'Back', hi: 'वापस', mr: 'मागे', gu: 'પાછા' },
+  rh_mic: { en: 'Speak', hi: 'बोलें', mr: 'बोला', gu: 'બોલો' },
+  rh_mic_stop: { en: 'Stop speaking', hi: 'बोलना रोकें', mr: 'बोलणं थांबवा', gu: 'બોલવાનું બંધ કરો' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

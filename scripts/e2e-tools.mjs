@@ -88,47 +88,12 @@ await page.getByRole('button', { name: 'I am going back to sleep' }).click()
 await page.getByRole('button', { name: 'Do not save' }).click()
 ok('"do not save" saves nothing', (await ab('GET', '/api/logs')).logs.filter((l) => l.symptom === 'night_waking' && l.severity === 1).length === 0)
 
-// ================= Rehearsal Room
+// ================= Rehearsal Room: the chat has its own suite (e2e-rehearsal). The scripted scene stays for screenshots and the embedded demo.
 await page.clock.uninstall?.().catch(() => {})
 await go('rehearsal?s=family')
 await page.getByText('Practise the hard talk here first').waitFor()
-const OWN = 'I feel exhausted at night. Could you take over dinner every evening, please?'
-for (let i = 0; i < 6; i++) {
-  const which = await Promise.race([page.locator('#rh-own').waitFor({ timeout: 6000 }).then(() => 'own').catch(() => 'x'), page.getByTestId('rh-feedback').waitFor({ timeout: 6000 }).then(() => 'fb').catch(() => 'x')])
-  if (which === 'fb') break
-  await page.locator('#rh-own').fill(OWN)
-  await page.getByRole('button', { name: 'Say it', exact: true }).click()
-}
-await page.getByTestId('rh-feedback').waitFor({ timeout: 10000 })
-const fbText = await page.getByTestId('rh-feedback').innerText()
-ok('feedback is about HER words: all four checks pass for a clear, kind ask', (await page.getByTestId('rh-feedback').locator('svg.lucide-check').count()) === 4 && /clear and kind/.test(fbText), fbText.replace(/\n/g, ' | ').slice(0, 140))
+ok('forced scene params keep the scripted demo scene', (await page.getByText('Tap to say this').count()) > 0)
 await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/73-rehearsal.png` })
-await page.getByRole('button', { name: 'Try again' }).click()
-ok('"Try again" starts the scene over', (await page.getByTestId('rh-feedback').count()) === 0)
-// blame + shouting is flagged, with a specific tip
-for (let i = 0; i < 6; i++) {
-  const which = await Promise.race([page.locator('#rh-own').waitFor({ timeout: 6000 }).then(() => 'own').catch(() => 'x'), page.getByTestId('rh-feedback').waitFor({ timeout: 6000 }).then(() => 'fb').catch(() => 'x')])
-  if (which === 'fb') break
-  await page.locator('#rh-own').fill('You never help and it is ALWAYS my job!!')
-  await page.getByRole('button', { name: 'Say it', exact: true }).click()
-}
-await page.getByTestId('rh-feedback').waitFor({ timeout: 10000 })
-const bad = await page.getByTestId('rh-feedback').innerText()
-ok('blame and shouting are named, with a gentle tip', (await page.getByTestId('rh-feedback').locator('svg.lucide-x').count()) >= 2 && /Try starting with how you feel/.test(bad), bad.replace(/\n/g, ' | ').slice(0, 160))
-ok('rehearsal stores nothing', !JSON.stringify(await ab('GET', '/api/export')).includes('ALWAYS my job'))
-// crisis in role-play is not practice
-await page.getByRole('button', { name: 'Try again' }).click()
-await page.locator('#rh-own').waitFor()
-await page.locator('#rh-own').fill('I want to die')
-await page.getByRole('button', { name: 'Say it', exact: true }).click()
-for (let i = 0; i < 6; i++) {
-  const which = await Promise.race([page.locator('#rh-own').waitFor({ timeout: 6000 }).then(() => 'own').catch(() => 'x'), page.getByTestId('rh-crisis').waitFor({ timeout: 6000 }).then(() => 'cr').catch(() => 'x')])
-  if (which === 'cr') break
-  await page.locator('#rh-own').fill('okay')
-  await page.getByRole('button', { name: 'Say it', exact: true }).click()
-}
-await page.getByTestId('rh-crisis').waitFor({ timeout: 10000 })
-ok('a crisis phrase said in role-play gets the real crisis reply', /not alone/i.test(await page.getByTestId('rh-crisis').innerText()))
 
 const real = errors.filter((e) => !/Failed to load resource.*(40[0-9]|410)/.test(e))
 ok('no unexpected console errors', real.length === 0, JSON.stringify(real))

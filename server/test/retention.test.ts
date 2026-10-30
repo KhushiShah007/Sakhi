@@ -26,3 +26,13 @@ describe('retention', () => {
     expect((await purgeExpired(db, now)).oldLogs).toBe(1);
   });
 });
+
+describe('retention of rehearsal sessions', () => {
+  it('removes old sessions and their encrypted turns together', async () => {
+    await db.query("INSERT INTO rehearsal_sessions(id, user_id, scenario, lang, created_at) VALUES ('rs_old','u1','family','en','2023-01-01T00:00:00Z'), ('rs_new','u1','hr','en','2026-10-01T00:00:00Z')");
+    await db.query("INSERT INTO rehearsal_turns(session_id, idx, who, text_enc) VALUES ('rs_old',0,'them','x'), ('rs_new',0,'them','y')");
+    expect((await purgeExpired(db, now)).oldRehearsals).toBe(1);
+    expect((await db.query('SELECT id FROM rehearsal_sessions')).map((r) => (r as { id: string }).id)).toEqual(['rs_new']);
+    expect((await db.query('SELECT session_id FROM rehearsal_turns')).length).toBe(1);
+  });
+});

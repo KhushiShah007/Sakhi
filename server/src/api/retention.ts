@@ -1,11 +1,12 @@
 import type { Db } from '../db/index.js';
 
-export interface Purged { otps: number; sessions: number; proposals: number; shares: number; adminSessions: number; oldLogs: number }
+export interface Purged { otps: number; sessions: number; proposals: number; shares: number; adminSessions: number; oldLogs: number; oldRehearsals: number }
 
 /**
  * Scheduled deletion, so data does not sit around longer than it is useful. Idempotent and safe to run often.
  * - expired one-time codes, sessions, admin sessions and unconfirmed proposal sets: immediately
  * - doctor/letter share links: 30 days after they expired (kept briefly so a revoked/expired link answers "expired", not "unknown")
+ * - rehearsal sessions and their turns older than the same window
  * - confirmed logs older than `logMonths` (default 24; 0 turns it off). She can still delete or export at any time.
  * The audit trail is kept: it holds no content, only who/what/when.
  */
@@ -21,6 +22,8 @@ export async function purgeExpired(db: Db, now: Date, opts: { logMonths?: number
     proposals: await del('DELETE FROM proposal_sets WHERE expires_at < $1', [iso]),
     shares: (await del('DELETE FROM brief_shares WHERE expires_at < $1', [grace])) + (await del('DELETE FROM letter_shares WHERE expires_at < $1', [grace])),
     adminSessions: await del('DELETE FROM admin_sessions WHERE expires_at < $1', [iso]),
+    // rehearsal sessions (and, by cascade, their encrypted turns) follow the same window as logs
+    oldRehearsals: months > 0 ? await del('DELETE FROM rehearsal_sessions WHERE created_at < $1', [cutoff.toISOString()]) : 0,
     oldLogs: months > 0 ? await del('DELETE FROM logs WHERE at < $1', [cutoff.toISOString()]) : 0,
   };
 }

@@ -34,7 +34,7 @@ Anything she says (transcripts), audio (processed in the browser; server speech 
 - **Third-party processors (optional)**: Anthropic (if `ANTHROPIC_API_KEY`) receives what she typed/said for extraction; ElevenLabs (if `ELEVENLABS_API_KEY`) receives the app's own wording to voice; WhatsApp/Meta (if configured) receives the recipient phone and card text; Open-Meteo receives her city name. Each is off by default. Disclose these in the in-app notice before enabling.
 
 ## Retention
-A scheduled job (`server/src/api/retention.ts`, at start and daily) deletes expired one-time codes, sessions, admin sessions and unconfirmed proposal sets; doctor/letter links 30 days after they expire; and confirmed logs older than `RETENTION_LOG_MONTHS` (default 24; `0` keeps them). The audit trail is kept because it holds no content. She can export or delete everything at any time.
+A scheduled job (`server/src/api/retention.ts`, at start and daily) deletes expired one-time codes, sessions, admin sessions and unconfirmed proposal sets; doctor/letter links 30 days after they expire; rehearsal sessions (and their encrypted turns) and confirmed logs older than `RETENTION_LOG_MONTHS` (default 24; `0` keeps them). The audit trail is kept because it holds no content. She can export or delete everything at any time.
 
 ## Breach runbook (draft, to be rehearsed)
 1. **Contain** (first hour): rotate `SAKHI_DATA_KEY` only after re-encrypting (data would be unreadable otherwise), revoke all sessions (`DELETE FROM sessions`), rotate OTP/WhatsApp/ElevenLabs/Anthropic keys, take the app read-only.

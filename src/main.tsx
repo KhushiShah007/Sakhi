@@ -1,3 +1,4 @@
+import './zodConfig'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import '@fontsource/poppins/400.css'

@@ -3,9 +3,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Briefcase, Check, Hand, HeartHandshake, Mic, RotateCcw, Sparkles, Stethoscope, X } from 'lucide-react'
 import { pick, useI18n } from '../i18n'
 import { Screen, Segmented, TopBar } from '../components/ui'
-import { useParam } from '../components/nav'
+import { useEmbedded, useParam } from '../components/nav'
+import RehearsalChat from './RehearsalChat'
 import { api } from '../api/client'
-import { useLive } from '../api/session'
+import { useLive, useSession } from '../api/session'
 import type { StrKey } from '../i18n/strings'
 import { useListen } from '../voice/speech'
 import { Avatar } from '../illustrations/Woman'
@@ -13,7 +14,20 @@ import { scenarios, type ScenarioId } from '../mock/content'
 
 const ICON = { family: HeartHandshake, hr: Briefcase, doctor: Stethoscope }
 
+/** Forced stage/scenario params (screenshots, the embedded demo) keep the scripted scene; everything else is the real chat. */
 export default function Rehearsal() {
+  const embedded = useEmbedded()
+  const { status } = useSession()
+  const forcedS = useParam('s')
+  const forcedAll = useParam('all')
+  const forced = forcedS || forcedAll
+  if (embedded || forced) return <RehearsalScripted />
+  if (status === 'authed') return <RehearsalChat />
+  if (status === 'offline' || status === 'netdown') return <RehearsalChat offline />
+  return <RehearsalScripted />
+}
+
+function RehearsalScripted() {
   const { t, lang } = useI18n()
   const qs = useParam('s') as ScenarioId | null
   const all = useParam('all') === '1'

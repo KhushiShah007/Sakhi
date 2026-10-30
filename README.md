@@ -123,3 +123,13 @@ Backgrounds are vertical peach → blush → lilac gradient washes; cards are wh
 `.github/workflows/deploy.yml` builds on every push to `main` and publishes `dist/` to GitHub Pages.
 Vite uses a relative base (`./`) plus HashRouter, so it works under any repo name. If the first run fails
 at *configure-pages*, open **Settings → Pages** in the repo and set **Source: GitHub Actions**, then re-run.
+
+
+## Browser support for voice
+| Browser | Speaking to Sakhi (recognition) | Sakhi speaking (synthesis) |
+|---|---|---|
+| Chrome / Edge, desktop and Android | Yes (needs https or localhost; Marathi/Gujarati depend on the device, otherwise it listens in Hindi) | Yes, if the device has a voice for the language |
+| Safari, iOS | Partial / varies | Yes, device voices |
+| Firefox, Brave | No: typing only (the app says so) | Yes, device voices |
+
+If a device has no voice for a language, Sakhi shows the words on screen and says why, instead of staying silent. Voice can be switched off in Me.

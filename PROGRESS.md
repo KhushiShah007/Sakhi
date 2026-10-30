@@ -1,5 +1,26 @@
 # Progress
 
+## Bug triage (Vent does not record, Rehearsal is not a chat, voice repeats or is silent)
+
+Method: each bug was reproduced in the two ways the app can run, then traced in code. Real Android/iOS devices and Edge/Firefox/Brave were **not** available, so those rows are reasoned from the Web Speech API behaviour, not observed. Browser behaviour was driven with Playwright (Chromium) using a fake `SpeechRecognition` / `speechSynthesis` that can emit any event, which is how the error paths were exercised.
+
+| | A. GitHub Pages / static (`status = offline`) | B. Full server (`npm start`, signed in) |
+|---|---|---|
+| **Vent** | `/vent` rendered `VentMock`: a scripted animation with no microphone, no request, no console error. That is the "Vent does not record" report. | `VentLive` + `useListen` worked, but: mic errors were silent (fixed earlier); no language fallback (Marathi/Gujarati recognisers are missing on some devices: `language-not-supported`); `stop()` returned the text before the last final result arrived; no restart-loop guard; no secure-context message (a LAN `http://192.168.x.x` address fails silently); Sakhi's own voice could hold the audio when recording started; no sign that it was listening. |
+| **Rehearsal** | `Rehearsal.tsx` replayed fixed turns; the free-text box only appeared when `live`. Whatever she said, the next scripted line came back. | Same scripted scene plus a one-shot `POST /api/rehearsal/feedback` at the end that stores nothing by design. Not a chat and nothing saved. |
+| **Voice** | Browser voices only. | Same, plus optional server TTS. |
+
+Root causes of the voice bug (confirmed with the fake engine):
+1. `u.onerror = done`: an engine error (no voice for `hi-IN`/`mr-IN`/`gu-IN`, autoplay blocked, `synthesis-failed`) was treated as "finished", so every track skipped through all its lines in milliseconds and nothing was heard.
+2. No voice for the language: a Hindi sentence read by an English voice (gibberish) or silence, with no explanation.
+3. `getVoices()` is empty on the first call; the voice was picked before `voiceschanged`.
+4. Engines that never fire `onend` stalled a track forever; the speaking utterance could be garbage-collected.
+5. Right Now spoke "Breathe in / Hold softly / Breathe out" at every phase change: about 22 times in 90 s. That is the "same thing again and again".
+6. The relax track reset to line 0 at the end instead of finishing.
+Not reproduced: a `useEffect` re-running `speak()` on state change (the `run`/`token` guards held in every screen).
+
+What changed is listed in DECISIONS.md ("Vent, Rehearsal and voice fixes") and covered by `server/test/speech.test.ts`, `server/test/rehearsal.test.ts`, `scripts/e2e-vent-flow.mjs`, `scripts/e2e-rehearsal.mjs`, `scripts/e2e-voicefix.mjs`.
+
 Honest status. The full brief is far larger than one session; this file says exactly what exists.
 
 ## Done (tested: `npm test`, 168 tests; `npm run test:safety`)

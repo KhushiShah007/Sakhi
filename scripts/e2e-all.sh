@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs every real-browser suite, prints failing checks, and fails at the end (so CI shows all failures, not just the first).
 rc=0
-for f in onboarding vent vent-flow home checkin voice voiceprefs voicefix reminders mic a11y translator privacy brief tools ivr family hr admin pwa; do
+for f in onboarding vent vent-flow home checkin voice voiceprefs voicefix reminders mic a11y translator privacy brief tools rehearsal ivr family hr admin pwa; do
   out=$(node scripts/e2e-$f.mjs 2>&1); code=$?
   if [ $code -ne 0 ]; then
     echo "=== e2e-$f FAILED"; echo "$out" | grep -vE '^PASS' | tail -25

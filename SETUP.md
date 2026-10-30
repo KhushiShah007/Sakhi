@@ -13,6 +13,9 @@ Sign in with any 10-digit number; the demo code is `123456`. Set `DEMO_MODE=true
 
 Tests: `npm test` (unit/integration, 257 tests incl. the 80-prompt AI safety suite: `npm run test:safety`), and `npm run e2e:live` (real-browser suites; needs the server above running and `npx playwright install chromium` once).
 
+## Running the full app vs the static site
+The static GitHub Pages build has no server: Vent records with your microphone and Rehearsal chats on this device (rules only, saved in this browser). The full app (`npm run build:web` then `DEMO_AUTH=true npm start`, http://localhost:8787) adds sign-in, the database, family links, doctor brief, reminders and the optional AI and natural voice. Microphone access needs https or localhost.
+
 ## What each key unlocks
 
 | Variable | Without it (fallback) | With it |
