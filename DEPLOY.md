@@ -7,6 +7,10 @@ The app is **one Node process**: it serves the web app and the API from the same
 ## Required environment in production
 `NODE_ENV=production`, `DATABASE_URL`, `SAKHI_DATA_KEY` (32 random bytes, base64), `OTP_WEBHOOK_URL` (+ `OTP_WEBHOOK_TOKEN`), `PUBLIC_URL`. Never set `DEMO_AUTH=true` (the server refuses to start). Optional: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, WhatsApp variables, `ADMIN_KEY`. See SETUP.md and `.env.example`.
 
+## On your own computer (most reliable for a live demo)
+`npm install` once, then `npm run demo` (Windows: double-click `start-demo.bat`). It builds the site if needed, starts the server with demo sign-in and the fictional demo data, and opens http://localhost:8787. Sign in with 9999900001 and code 123456. Keep the window open while presenting. Chrome treats localhost as secure, so the microphone works.
+To give someone else a temporary link to your running copy: `cloudflared tunnel --url http://localhost:8787` (free, no account; install cloudflared first) prints an https address that works while your computer is on.
+
 ## Vercel: the static site (free, about 2 minutes)
 The static build only (no sign-in or database; Vent and Rehearsal run in the browser and save on the device). `vercel.json` is already set up.
 1. https://vercel.com/new → **Import** the Sakhi repo from GitHub (Hobby plan is free).

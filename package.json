@@ -18,7 +18,8 @@
     "start": "tsx server/src/index.ts",
     "seed": "tsx server/src/seed.ts",
     "check:i18n": "tsx scripts/check-i18n.mjs",
-    "eval:speech": "tsx scripts/eval-speech.mjs"
+    "eval:speech": "tsx scripts/eval-speech.mjs",
+    "demo": "node scripts/start-demo.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.13",
