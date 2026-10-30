@@ -7,6 +7,13 @@ The app is **one Node process**: it serves the web app and the API from the same
 ## Required environment in production
 `NODE_ENV=production`, `DATABASE_URL`, `SAKHI_DATA_KEY` (32 random bytes, base64), `OTP_WEBHOOK_URL` (+ `OTP_WEBHOOK_TOKEN`), `PUBLIC_URL`. Never set `DEMO_AUTH=true` (the server refuses to start). Optional: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, WhatsApp variables, `ADMIN_KEY`. See SETUP.md and `.env.example`.
 
+## Vercel: the static site (free, about 2 minutes)
+The static build only (no sign-in or database; Vent and Rehearsal run in the browser and save on the device). `vercel.json` is already set up.
+1. https://vercel.com/new → **Import** the Sakhi repo from GitHub (Hobby plan is free).
+2. Leave the defaults (it reads `vercel.json`: `npm run build:web`, output `dist`) → **Deploy**.
+3. Open the `https://<project>.vercel.app` address. Every push redeploys.
+The full app (sign-in, database, family links) is not supported on Vercel: it is a long-running server. Use Render or a container host for that.
+
 ## Render: public demo of the full app (free, about 5 minutes)
 Uses `render-demo.yaml`: sign in with any phone number and the code `123456`, fictional data only, resets when the service restarts. Not for real users.
 1. https://dashboard.render.com/blueprints → **New Blueprint Instance** → connect GitHub → pick the Sakhi repo.
