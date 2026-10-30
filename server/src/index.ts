@@ -1,3 +1,4 @@
+import './demoBoot.js'; // first: DEMO_DEPLOY=true settles the environment before anything reads it
 import { dbFromEnv, migrate } from './db/index.js';
 import { llmFromEnv } from './llm/provider.js';
 import { buildApp } from './api/app.js';

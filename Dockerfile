@@ -10,9 +10,10 @@ FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm ci --omit=dev && npm i --no-save tsx
+RUN npm ci --omit=dev
 COPY server ./server
 COPY --from=build /app/dist ./dist
 EXPOSE 8787
 # DATABASE_URL, SAKHI_DATA_KEY and OTP_WEBHOOK_URL are required in production; DEMO_AUTH must not be true.
-CMD ["npx", "tsx", "server/src/index.ts"]
+# For a public DEMO set DEMO_DEPLOY=true (see render-demo.yaml); never for real users.
+CMD ["node_modules/.bin/tsx", "server/src/index.ts"]

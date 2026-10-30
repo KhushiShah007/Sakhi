@@ -8,10 +8,6 @@ services:
     plan: free
     healthCheckPath: /healthz
     envVars:
-      - { key: NODE_ENV, value: development }   # the image sets production, which forbids demo sign-in; this overrides it for the demo only
-      - { key: DEMO_AUTH, value: "true" }
-      - { key: DEMO_MODE, value: "true" }       # shows a small DEMO badge
-      - { key: SEED_DEMO, value: "true" }       # loads fictional Sunita, her family, and Navrang Textiles on start
+      - { key: DEMO_DEPLOY, value: "true" }     # ONE switch: production off, demo sign-in + badge + fictional demo data on
       - { key: ADMIN_KEY, generateValue: true } # admin console key: see it in the service's Environment tab
       - { key: SAKHI_DATA_KEY, generateValue: true }
-      - { key: RATE_LIMIT_PER_MIN, value: "300" }

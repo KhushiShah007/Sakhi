@@ -18,6 +18,7 @@ The full app (sign-in, database, family links) is not supported on Vercel: it is
 Uses `render-demo.yaml`: sign in with any phone number and the code `123456`, fictional data only, resets when the service restarts. Not for real users.
 1. https://dashboard.render.com/blueprints → **New Blueprint Instance** → connect GitHub → pick the Sakhi repo.
 2. **Blueprint file path**: `render-demo.yaml` → **Apply**. The first build takes about 5-8 minutes.
+   If you created the service by hand instead (New → Web Service), add one environment variable: `DEMO_DEPLOY` = `true`, then redeploy. Without it the server starts in production mode and stops with "DATABASE_URL is required in production".
 3. Open the URL Render shows (`https://sakhi-demo.onrender.com`). Demo login `+919999900001`, code `123456`. HR dashboard code `NAVRANG-HR-DEMO`; admin key is in the service's **Environment** tab (`ADMIN_KEY`).
 4. The free plan sleeps after 15 idle minutes; the next visit takes about 30 seconds to wake.
 
