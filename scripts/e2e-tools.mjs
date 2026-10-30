@@ -25,7 +25,7 @@ for (const text of [`hot flashes and so tired. ${SECRET}`, 'could not sleep, wok
 }
 await ctx.addInitScript(() => {
   window.__spoken = []
-  window.speechSynthesis.speak = (u) => { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 20) }
+  window.speechSynthesis.getVoices = () => [{ name: 'Google English', lang: 'en-IN', localService: false }, { name: 'Google Hindi', lang: 'hi-IN', localService: false }]; window.speechSynthesis.speak = (u) => { u.text && window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 20) }
 })
 const page = await ctx.newPage()
 const errors = []

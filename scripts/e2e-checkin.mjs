@@ -20,8 +20,8 @@ await A('PATCH', '/api/me', { name: 'Sunita', onboarded: true, stage: 'perimenop
 // record what the browser voice is asked to say (headless has no voices)
 await ctx.addInitScript(() => {
   window.__spoken = []
-  const synth = window.speechSynthesis
-  synth.speak = (u) => { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 10) }
+  const synth = window.speechSynthesis; synth.getVoices = () => [{ name: 'Google English', lang: 'en-IN', localService: false }, { name: 'Google Hindi', lang: 'hi-IN', localService: false }]
+  synth.speak = (u) => { u.text && window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 10) }
 })
 const page = await ctx.newPage()
 const errors = []

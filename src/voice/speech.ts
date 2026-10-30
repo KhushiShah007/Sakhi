@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { Lang } from '../i18n'
 import { apiBase, getCsrf } from '../api/client'
 import { CALM, pickVoice, splitSentences } from './tts'
@@ -32,30 +32,110 @@ function stopAll() {
   if (ttsSupported()) window.speechSynthesis.cancel()
 }
 
-/** Browser voice, tuned to be calm: slower, lower, the most natural voice the device has, with a pause between sentences. */
-function speakBrowser(text: string, lang: Lang, my: number, onEnd?: () => void) {
-  if (!ttsSupported()) { onEnd?.(); return }
+// ---- voice status: screens show "voice not available, showing text" instead of failing silently
+export interface VoiceStatus { available: boolean | null; voiceName: string; reason: string }
+let status: VoiceStatus = { available: null, voiceName: '', reason: '' }
+const listeners = new Set<() => void>()
+const setStatus = (s: VoiceStatus) => { if (s.available === status.available && s.voiceName === status.voiceName && s.reason === status.reason) return; status = s; listeners.forEach((l) => l()) }
+export const getVoiceStatus = () => status
+/** For tests. */
+export const resetVoiceStatus = () => setStatus({ available: null, voiceName: '', reason: '' })
+export function useVoiceStatus(): VoiceStatus {
+  return useSyncExternalStore((cb) => { listeners.add(cb); return () => { listeners.delete(cb) } }, () => status, () => status)
+}
+
+export interface SpeakOpts { /** Called when the device cannot speak this line (no voice, blocked, engine error). The line is then shown as text. */ onError?: (reason: string) => void }
+
+/** How long a line takes to read silently, used to pace text-only playback so a track never skips through in a blink. */
+export const readingMs = (text: string) => Math.min(Math.max(text.length * 60, 1800), 7000)
+/** If the engine never reports the end of a line, move on after this long. */
+export const watchdogMs = (text: string) => text.length * 120 + 3000
+
+const keepAlive = new Set<SpeechSynthesisUtterance>() // browsers can garbage-collect a speaking utterance and never fire onend
+
+/** getVoices() is often empty on the first call; wait for voiceschanged, but never longer than about a second. */
+export function voicesReady(timeoutMs = 1000): Promise<SpeechSynthesisVoice[]> {
+  if (!ttsSupported()) return Promise.resolve([])
+  const synth = window.speechSynthesis
+  const have = synth.getVoices()
+  if (have.length) return Promise.resolve(have)
+  return new Promise((resolve) => {
+    let done = false
+    const finish = () => { if (done) return; done = true; synth.removeEventListener?.('voiceschanged', finish); resolve(synth.getVoices()) }
+    synth.addEventListener?.('voiceschanged', finish)
+    window.setTimeout(finish, timeoutMs)
+  })
+}
+
+/**
+ * The best voice we can honestly use. A Marathi line may use a Hindi voice (same script); Gujarati has no such stand-in,
+ * and an English voice reading Devanagari or Gujarati is gibberish, so then there is no voice and the line is shown as text.
+ */
+export function chooseVoice(voices: SpeechSynthesisVoice[], lang: Lang, preferred: string): SpeechSynthesisVoice | undefined {
+  const want = SPEECH_LANG[lang]
+  const own = voices.find((v) => v.name === preferred && v.lang.toLowerCase().startsWith(want.slice(0, 2).toLowerCase())) ?? pickVoice(voices, want)
+  if (own) return own
+  return lang === 'mr' ? pickVoice(voices, SPEECH_LANG.hi) : undefined
+}
+
+/** Text-only playback: the line is on screen, and the track moves on at reading pace. */
+function readInstead(text: string, my: number, reason: string, opts: SpeakOpts | undefined, onEnd?: () => void) {
+  setStatus({ available: false, voiceName: '', reason })
+  opts?.onError?.(reason)
+  window.setTimeout(() => { if (my === token) onEnd?.() }, readingMs(text))
+}
+
+/** Browser voice, tuned to be calm: slower, the most natural voice the device has, with a pause between sentences. */
+async function speakBrowser(text: string, lang: Lang, my: number, onEnd?: () => void, opts?: SpeakOpts) {
+  if (!ttsSupported()) { readInstead(text, my, 'unsupported', opts, onEnd); return }
   const synth = window.speechSynthesis
   const prefs = getVoicePrefs()
-  const voices = synth.getVoices()
-  const voice = voices.find((v) => v.name === prefs.voice && v.lang.toLowerCase().startsWith(SPEECH_LANG[lang].slice(0, 2).toLowerCase())) ?? pickVoice(voices, SPEECH_LANG[lang])
+  const voices = await voicesReady()
+  if (my !== token) return
+  const voice = chooseVoice(voices, lang, prefs.voice)
+  if (!voice) { readInstead(text, my, voices.length ? 'no_voice_for_language' : 'no_voices', opts, onEnd); return }
+  setStatus({ available: true, voiceName: voice.name, reason: '' })
   const parts = splitSentences(text)
   const next = (i: number) => {
     if (my !== token) return
     if (i >= parts.length) { onEnd?.(); return }
     const u = new SpeechSynthesisUtterance(parts[i])
-    u.lang = SPEECH_LANG[lang]; u.rate = PACE_RATE[prefs.pace]; u.pitch = CALM.pitch; u.volume = CALM.volume
-    if (voice) { try { u.voice = voice } catch { /* an odd voice object must never stop the app speaking */ } }
-    const done = () => { if (my === token) window.setTimeout(() => next(i + 1), i + 1 < parts.length ? CALM.pauseMs : 0) }
-    u.onend = done; u.onerror = done
+    u.lang = voice.lang || SPEECH_LANG[lang]; u.rate = PACE_RATE[prefs.pace]; u.pitch = CALM.pitch; u.volume = CALM.volume
+    try { u.voice = voice } catch { /* an odd voice object must never stop the app speaking */ }
+    let settled = false
+    let dog = 0
+    const settle = () => { if (settled) return false; settled = true; window.clearTimeout(dog); keepAlive.delete(u); return true }
+    u.onend = () => { if (settle() && my === token) window.setTimeout(() => next(i + 1), i + 1 < parts.length ? CALM.pauseMs : 0) }
+    u.onerror = (e) => {
+      if (!settle() || my !== token) return
+      const reason = (e as { error?: string }).error || 'speech_error'
+      if (reason === 'canceled' || reason === 'interrupted') return // we cancelled it ourselves
+      // a real engine error (blocked, no language data, busy): do NOT race through the remaining lines
+      readInstead(parts.slice(i).join(' '), my, reason, opts, onEnd)
+    }
+    dog = window.setTimeout(() => { if (!settle() || my !== token) return; try { synth.cancel() } catch { /* ignore */ } next(i + 1) }, watchdogMs(parts[i]))
+    keepAlive.add(u)
     synth.speak(u)
   }
   next(0)
 }
 
-async function speakServer(text: string, lang: Lang, my: number, onEnd?: () => void) {
+let unlocked = false
+/** Mobile browsers only allow speech after a tap; one silent utterance on the first tap unlocks it for the rest of the session. */
+function installUnlock() {
+  if (unlocked || typeof document === 'undefined' || !ttsSupported()) return
+  const once = () => {
+    unlocked = true
+    document.removeEventListener('pointerdown', once, true)
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')) } catch { /* ignore */ }
+  }
+  document.addEventListener('pointerdown', once, true)
+}
+installUnlock()
+
+async function speakServer(text: string, lang: Lang, my: number, onEnd?: () => void, opts?: SpeakOpts) {
   let fellBack = false // the error handler and the catch can both fire: speak the fallback once
-  const fallback = () => { if (fellBack || my !== token) return; fellBack = true; speakBrowser(text, lang, my, onEnd) }
+  const fallback = () => { if (fellBack || my !== token) return; fellBack = true; void speakBrowser(text, lang, my, onEnd, opts) }
   try {
     const key = `${lang}|${text}`
     let url = audioCache.get(key)
@@ -78,12 +158,12 @@ async function speakServer(text: string, lang: Lang, my: number, onEnd?: () => v
 }
 
 /** Calm, neutral synthetic voice. Never a clone of a real person. */
-export function speak(text: string, lang: Lang, onEnd?: () => void) {
+export function speak(text: string, lang: Lang, onEnd?: () => void, opts?: SpeakOpts) {
   stopAll()
   const my = token
   if (!getVoicePrefs().on) { onEnd?.(); return }
-  if (serverTts) void speakServer(text, lang, my, onEnd)
-  else speakBrowser(text, lang, my, onEnd)
+  if (serverTts) void speakServer(text, lang, my, onEnd, opts)
+  else void speakBrowser(text, lang, my, onEnd, opts)
 }
 export const stopSpeaking = () => stopAll()
 

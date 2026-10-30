@@ -3,6 +3,7 @@ import { Phone, PhoneCall, PhoneOff } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { api } from '../api/client'
 import { Screen, TopBar } from '../components/ui'
+import VoiceNote from '../components/VoiceNote'
 import { speak, stopSpeaking, useListen } from '../voice/speech'
 
 interface Say { text: string; pauseMs: number }
@@ -71,6 +72,7 @@ export default function MissedCallLive() {
           </ul>
         </div>
 
+        <VoiceNote className="mt-3" />
         {err && <p role="alert" className="mt-3 rounded-2xl bg-[#FBEDEF] px-4 py-3 text-[15.5px] font-medium text-[#8A1F42]">{t('fl_error')}</p>}
 
         {(stage === 'idle' || stage === 'ended') && <button onClick={() => void start()} className="btn-primary mt-4 w-full"><Phone size={19} /> {stage === 'idle' ? t('mc_start') : t('mc_again')}</button>}

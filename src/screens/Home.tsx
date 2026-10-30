@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import VoiceNote from '../components/VoiceNote'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell, Check, ChevronRight, Droplets, FileHeart, Mail, Mic, Moon, Pause, PhoneCall, Play, SkipBack, SkipForward,
@@ -197,18 +198,19 @@ function PlanRelax() {
   const [done, setDone] = useState<Record<string, boolean>>({ plan1: true })
   const [playing, setPlaying] = useState(false)
   const [line, setLine] = useState(0)
+  const [finished, setFinished] = useState(false)
   const run = useRef(0)
   const say = (i: number, l: Lang) => {
     const id = ++run.current
-    setLine(i); setPlaying(true)
+    setLine(i); setPlaying(true); setFinished(false)
     speak(t(RELAX[i]), l, () => {
       if (id !== run.current) return
       if (i + 1 < RELAX.length) window.setTimeout(() => id === run.current && say(i + 1, l), 2500) // a pause to breathe between lines
-      else { setPlaying(false); setLine(0) }
+      else { setPlaying(false); setFinished(true) } // the last line ends the track: it does not start over
     })
   }
-  const toggle = () => { if (playing) { run.current++; stopSpeaking(); setPlaying(false) } else say(line, lang) }
-  const skip = (d: number) => { const n = Math.min(RELAX.length - 1, Math.max(0, line + d)); if (playing) say(n, lang); else setLine(n) }
+  const toggle = () => { if (playing) { run.current++; stopSpeaking(); setPlaying(false) } else say(finished ? 0 : line, lang) }
+  const skip = (d: number) => { const n = Math.min(RELAX.length - 1, Math.max(0, line + d)); if (playing) say(n, lang); else { setLine(n); setFinished(false) } }
   useEffect(() => () => { run.current++; stopSpeaking() }, [])
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -227,8 +229,10 @@ function PlanRelax() {
       <div className="glass flex flex-col rounded-[26px] p-4" style={{ background: 'linear-gradient(160deg, rgba(243,232,251,0.95), rgba(255,255,255,0.7))' }}>
         <span className="mb-2 grid h-9 w-9 place-items-center rounded-full bg-lavender text-peri-deep"><Waves size={18} /></span>
         <div className="text-[16px] font-semibold">{t('relax')}</div>
-        <div className="text-[14px] text-ink-soft">{t('relax_track')} · {line + 1}/{RELAX.length}</div>
+        <div className="text-[14px] text-ink-soft">{t('relax_track')} · {finished ? t('rn_idle_done') : `${line + 1}/${RELAX.length}`}</div>
         <Waveform bars={18} active={playing} height={30} color="#6C7BD9" className="my-2" />
+        {playing && <p aria-live="polite" data-testid="relax-caption" className="mb-1 text-[13.5px] leading-snug text-ink-soft">{t(RELAX[line])}</p>}
+        {playing && <VoiceNote className="mb-2 text-[13.5px]" />}
         <div className="mt-auto flex items-center justify-between">
           <button aria-label="Previous" onClick={() => skip(-1)} className="grid h-12 w-12 place-items-center rounded-full text-ink-soft"><SkipBack size={18} /></button>
           <button aria-label={playing ? 'Pause' : 'Play'} onClick={toggle} className="grid h-12 w-12 place-items-center rounded-full bg-rose text-white shadow-soft">

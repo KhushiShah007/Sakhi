@@ -643,6 +643,15 @@ export const S = {
   rm_denied: { en: 'Notifications are blocked for this site. You can allow them in the browser settings.', hi: 'इस साइट के लिए सूचनाएँ बंद हैं। ब्राउज़र सेटिंग में अनुमति दे सकती हैं।', mr: 'या साइटसाठी सूचना बंद आहेत. ब्राउझर सेटिंगमध्ये परवानगी देऊ शकता.', gu: 'આ સાઇટ માટે સૂચનાઓ બંધ છે. બ્રાઉઝર સેટિંગમાં પરવાનગી આપી શકો.' },
   rm_failed: { en: 'Could not set up reminders on this device. Please try again later.', hi: 'इस डिवाइस पर रिमाइंडर नहीं बन सके। कृपया बाद में कोशिश करें।', mr: 'या डिव्हाइसवर आठवण सेट करता आली नाही. कृपया नंतर प्रयत्न करा.', gu: 'આ ડિવાઇસ પર યાદ સેટ થઈ શકી નહીં. કૃપા કરીને પછી પ્રયત્ન કરો.' },
   rm_unavailable: { en: 'Reminders are not available here (they need a notification-capable browser and a server set up for them). Everything else works without them.', hi: 'यहाँ रिमाइंडर उपलब्ध नहीं हैं (इसके लिए सूचना-सक्षम ब्राउज़र और सेट-अप सर्वर चाहिए)। बाकी सब बिना इसके चलता है।', mr: 'येथे आठवण उपलब्ध नाहीत (त्यासाठी सूचना-सक्षम ब्राउझर आणि सेट-अप सर्व्हर लागतो). बाकी सर्व त्याशिवाय चालते.', gu: 'અહીં યાદ ઉપલબ્ધ નથી (તેના માટે સૂચના-સક્ષમ બ્રાઉઝર અને સેટ-અપ સર્વર જોઈએ). બાકી બધું તેના વગર ચાલે છે.' },
+
+  // ---- voice cues and status
+  rn_e1: { en: 'You are doing well.', hi: 'आप अच्छा कर रही हैं।', mr: 'तुम्ही छान करत आहात.', gu: 'તમે સરસ કરી રહ્યા છો.' },
+  rn_e2: { en: 'Keep the out-breath long and soft.', hi: 'छोड़ने वाली साँस लंबी और कोमल रखें।', mr: 'सोडणारा श्वास लांब आणि हळुवार ठेवा.', gu: 'છોડવાનો શ્વાસ લાંબો અને હળવો રાખો.' },
+  rn_e3: { en: 'Halfway there. Let your shoulders drop.', hi: 'आधा रास्ता पार। कंधे ढीले छोड़ें।', mr: 'निम्मा टप्पा पार. खांदे सैल सोडा.', gu: 'અડધે પહોંચ્યા. ખભા ઢીલા છોડો.' },
+  rn_e4: { en: 'This feeling will pass. Stay with the breath.', hi: 'यह एहसास गुज़र जाएगा। साँस के साथ रहें।', mr: 'ही भावना निघून जाईल. श्वासासोबत राहा.', gu: 'આ લાગણી પસાર થઈ જશે. શ્વાસ સાથે રહો.' },
+  rn_idle_done: { en: 'Done', hi: 'पूरा हुआ', mr: 'पूर्ण', gu: 'પૂર્ણ' },
+  vn_none: { en: 'Voice is not available on this device, so Sakhi is showing the words instead.', hi: 'इस डिवाइस पर आवाज़ उपलब्ध नहीं है, इसलिए सखी शब्द दिखा रही है।', mr: 'या डिव्हाइसवर आवाज उपलब्ध नाही, म्हणून सखी शब्द दाखवत आहे.', gu: 'આ ડિવાઇસ પર અવાજ ઉપલબ્ધ નથી, તેથી સખી શબ્દો બતાવી રહી છે.' },
+  vn_settings: { en: 'Voice settings', hi: 'आवाज़ की सेटिंग', mr: 'आवाज सेटिंग', gu: 'અવાજ સેટિંગ' },
 } satisfies Record<string, Entry>
 
 export type StrKey = keyof typeof S

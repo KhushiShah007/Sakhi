@@ -6,6 +6,7 @@ import type { StrKey } from '../i18n/strings'
 import { apiQueued } from '../api/queue'
 import { Orb, Screen } from '../components/ui'
 import { useGo } from '../components/nav'
+import VoiceNote from '../components/VoiceNote'
 import { speak, stopSpeaking } from '../voice/speech'
 
 const WIND: StrKey[] = ['rx_1', 'rx_2', 'rx_3', 'rx_6']
@@ -21,6 +22,7 @@ export default function ThreeAMLive() {
   const started = useRef(Date.now())
   const [now, setNow] = useState(new Date())
   const [guiding, setGuiding] = useState(false)
+  const [caption, setCaption] = useState('')
   const [stage, setStage] = useState<'awake' | 'ask' | 'saved'>('awake')
   const [minutes, setMinutes] = useState(1)
   const [err, setErr] = useState(false)
@@ -30,14 +32,14 @@ export default function ThreeAMLive() {
 
   const guide = (i = 0) => {
     const id = ++run.current
-    setGuiding(true)
+    setGuiding(true); setCaption(t(WIND[i]))
     speak(t(WIND[i]), lang, () => {
       if (id !== run.current) return
       if (i + 1 < WIND.length) window.setTimeout(() => id === run.current && guide(i + 1), 3000)
-      else setGuiding(false)
+      else { setGuiding(false); setCaption('') } // plays once, then stops
     })
   }
-  const stopGuide = () => { run.current++; stopSpeaking(); setGuiding(false) }
+  const stopGuide = () => { run.current++; stopSpeaking(); setGuiding(false); setCaption('') }
   const goBackToSleep = () => { stopGuide(); setMinutes(Math.max(1, Math.round((Date.now() - started.current) / 60_000))); setStage('ask') }
   const save = async () => { try { await apiQueued('POST', '/api/awakenings', { minutes }); setStage('saved') } catch { setErr(true) } }
   const awake = Math.max(1, Math.round((now.getTime() - started.current) / 60_000))
@@ -62,6 +64,8 @@ export default function ThreeAMLive() {
       {stage === 'awake' && (
         <>
           <div className="relative mt-6 flex justify-center"><Orb night size={150} active={guiding} label={guiding ? t('n_stop') : t('n_wind')} onClick={() => (guiding ? stopGuide() : guide())} /></div>
+          {guiding && <p aria-live="polite" data-testid="guide-caption" className="relative mx-8 mt-4 text-center text-[18px] leading-relaxed text-[#E2CDD8]">{caption}</p>}
+          {guiding && <VoiceNote className="relative mx-6 mt-3 opacity-90" />}
           <div className="relative mt-auto px-5 pb-8">
             <div className="grid grid-cols-2 gap-2.5">
               <button onClick={() => { stopGuide(); go('/right-now') }} className="flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-white/[0.08] text-[14px] text-[#E2CDD8]"><Snowflake size={20} className="text-[#E7A9C0]" /> {t('n_cool')}</button>

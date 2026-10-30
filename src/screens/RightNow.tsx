@@ -7,6 +7,8 @@ import { Screen, TopBar, Waveform } from '../components/ui'
 import { useGo } from '../components/nav'
 import { useSession } from '../api/session'
 import { speak, stopSpeaking } from '../voice/speech'
+import { freshCueState, nextCue } from '../voice/cues'
+import VoiceNote from '../components/VoiceNote'
 import { HeroSwirls, Lotus, WaveEdge } from '../illustrations/art'
 
 const TOTAL = 90
@@ -33,17 +35,19 @@ export default function RightNow() {
     return () => window.clearInterval(id)
   }, [playing, finished])
   // calm voice cue at every phase change (browser voice, offline, never a clone)
-  const lastKey = useRef<string>('')
+  // Full cue for the first two breath cycles, then silence with one varied encouraging line about every 30 s; never the same line twice in a row.
+  const cues = useRef(freshCueState())
   const phKey = phaseAt(elapsed).key
   useEffect(() => {
     if (!live || !playing || finished) return
-    if (lastKey.current !== phKey) { lastKey.current = phKey; speak(t(phKey), lang) }
+    const key = nextCue(elapsed, phKey, cues.current)
+    if (key) speak(t(key as StrKey), lang)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phKey, playing, finished, live])
   useEffect(() => { if (finished && live) { speak(t('rn_done'), lang) } }, [finished]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => stopSpeaking(), [])
   useEffect(() => { if (!playing) stopSpeaking() }, [playing])
-  const restart = () => { lastKey.current = ''; setElapsed(0); setPlaying(true) }
+  const restart = () => { cues.current = freshCueState(); setElapsed(0); setPlaying(true) }
   const left = TOTAL - elapsed
   const ph = phaseAt(elapsed)
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -80,6 +84,7 @@ export default function RightNow() {
             </motion.div>
           </AnimatePresence>
           <div className="text-[14px] text-white/90">{t('rn_voice')}</div>
+          {live && <VoiceNote className="mx-6 mt-3 text-left" />}
         </div>
       </div>
 

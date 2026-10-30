@@ -16,7 +16,7 @@ const csrf = (await (await ctx.request.post(`${B}/api/auth/otp/verify`, { data: 
 const A = async (m, u, d) => (await ctx.request.fetch(B + u, { method: m, data: d, headers: { 'x-csrf-token': csrf } })).json()
 await A('POST', '/api/consents', { purpose: 'core_logging', granted: true })
 await A('PATCH', '/api/me', { name: 'Sunita', onboarded: true, lang: 'en' })
-await ctx.addInitScript(() => { window.__spoken = []; window.speechSynthesis.speak = (u) => { window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 10) } })
+await ctx.addInitScript(() => { window.__spoken = []; window.speechSynthesis.getVoices = () => [{ name: 'Google English', lang: 'en-IN', localService: false }, { name: 'Google Hindi', lang: 'hi-IN', localService: false }]; window.speechSynthesis.speak = (u) => { u.text && window.__spoken.push(u.text); setTimeout(() => u.onend && u.onend(), 10) } })
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))
